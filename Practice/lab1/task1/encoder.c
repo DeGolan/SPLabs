@@ -3,35 +3,78 @@
 
 int main(int argc, char **argv) {
 
-    //FILE * input=stdin;
-    //input=fopen(argv[1],"r");
-
-   char inputC;
-   int d=0;
+   
+    FILE * input=stdin;
+    FILE * output=stdout;
+    char inputC;
+    int debug=0,letters=0,sign=0,key=0;
    
     for(int i=1; i<argc; i++){
-        if(strcmp(argv[i],"-D")==0){
-            d=1;
-            printf("-D\n");
+        if(strcmp(argv[i],"-D")==0){ //debug mode
+            debug=1;
+            fprintf(stderr,"-D\n");
         }
-        else{
-            printf("invalid parameter - %s\n",argv[i]);
-            return 1;
+        else if((argv[i])[1]=='e'&& (argv[i])[3]==0){ //encryption mode
+            if((argv[i])[0]=='-'){
+                sign=-1;
+            }
+            else if((argv[i])[0]=='+'){
+                sign=1;
+            }
+            if((argv[i])[2]>='0' && (argv[i])[2]<='9'){
+                key=(argv[i])[2]-48;
+            }
+            else if((argv[i])[2]>='A' && (argv[i])[2]<='F'){
+                key=(argv[i])[2]-55;             
+            }
         }
+        
+        if((argv[i])[0]=='-' && (argv[i])[1]=='i'){ //read from file
+            input=fopen(argv[i]+2,"r");
+            if(input==NULL){ 
+                fprintf(stderr,"File not found\n");
+                return 1;
+            }           
+        } 
+         if((argv[i])[0]=='-' && (argv[i])[1]=='o'){ //write to file
+            output=fopen(argv[i]+2,"w");
+         }
     }  
     do
     {
-        inputC=fgetc(stdin);
-        if(feof(stdin))
+        inputC=fgetc(input);
+        if(feof(input))
             break;
-        if(inputC >= 'A' && inputC <= 'Z'){
-            inputC=inputC+32;
+        if(inputC!=10){
+            if(debug){
+             fprintf(stderr,"%i ", inputC);
+            }
+            if(sign){
+                inputC=inputC+(sign*key);
+            }
+            else if(inputC >= 'A' && inputC <= 'Z'){
+                letters++;
+                inputC=inputC+32;
+            }
+            if(debug){
+                fprintf(stderr,"%i\n", inputC);
+            }     
         }
-        printf("%c",inputC);
+        else if(debug){
+            fprintf(stderr,"\nthe number of letters: %i\n\n",letters);
+            letters=0;
+
+        }
+        fprintf(output,"%c",inputC);
+        fflush(output);
+        
 
     } while(1);
-
-    //fclose(input);
+    if(input!=stdin)
+         fclose(input);
+    if(output!=stdout)
+         fclose(output);
+   
     return 0;
 
  }
