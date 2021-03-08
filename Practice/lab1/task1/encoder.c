@@ -6,7 +6,7 @@ int main(int argc, char **argv) {
    
     FILE * input=stdin;
     FILE * output=stdout;
-    char inputC;
+    char before,after;
     int debug=0,letters=0,sign=0,key=0;
    
     for(int i=1; i<argc; i++){
@@ -14,62 +14,69 @@ int main(int argc, char **argv) {
             debug=1;
             fprintf(stderr,"-D\n");
         }
-        else if((argv[i])[1]=='e'&& (argv[i])[3]==0){ //encryption mode
+        else if(((argv[i])[0]=='-' ||(argv[i])[0]=='+') && (argv[i])[1]=='e'&& (argv[i])[3]==0 &&
+         (((argv[i])[2]>='0' && (argv[i])[2]<='9') ||((argv[i])[2]>='A' && (argv[i])[2]<='F'))){ //encryption mode
             if((argv[i])[0]=='-'){
                 sign=-1;
             }
-            else if((argv[i])[0]=='+'){
+            else{
                 sign=1;
             }
             if((argv[i])[2]>='0' && (argv[i])[2]<='9'){
                 key=(argv[i])[2]-48;
             }
-            else if((argv[i])[2]>='A' && (argv[i])[2]<='F'){
+            else{
                 key=(argv[i])[2]-55;             
             }
-        }
-        
-        if((argv[i])[0]=='-' && (argv[i])[1]=='i'){ //read from file
+        }   
+        else if((argv[i])[0]=='-' && (argv[i])[1]=='i'){ //read from file
             input=fopen(argv[i]+2,"r");
             if(input==NULL){ 
                 fprintf(stderr,"File not found\n");
                 return 1;
             }           
         } 
-         if((argv[i])[0]=='-' && (argv[i])[1]=='o'){ //write to file
+        else if((argv[i])[0]=='-' && (argv[i])[1]=='o'){ //write to file
             output=fopen(argv[i]+2,"w");
-         }
+        }
+        else{//invalid parameter - throw err
+            fprintf(stderr,"invalid parameter - %s\n",argv[i]);
+	        return 1;
+        }
     }  
-    do
+    do //encoder main work
     {
-        inputC=fgetc(input);
+        before=fgetc(input);
+        after=before;
+
         if(feof(input))
             break;
-        if(inputC!=10){
-            if(debug){
-             fprintf(stderr,"%i ", inputC);
+        if(before!=10){
+           
+            if(sign){//encryption mode
+                after=before+(sign*key);
             }
-            if(sign){
-                inputC=inputC+(sign*key);
-            }
-            else if(inputC >= 'A' && inputC <= 'Z'){
+            else if(before >= 'A' && before <= 'Z'){//to lowercase
                 letters++;
-                inputC=inputC+32;
+                after=before+32;
             }
-            if(debug){
-                fprintf(stderr,"%i\n", inputC);
+            if(debug){//debuging mode
+                fprintf(stderr,"%i %i\n", before,after);
             }     
         }
-        else if(debug){
+        else if(debug){//debuging mode
             fprintf(stderr,"\nthe number of letters: %i\n\n",letters);
             letters=0;
 
         }
-        fprintf(output,"%c",inputC);
-        fflush(output);
+        fprintf(output,"%c",after);
+        if(output!=stdout){//flush the file writing stream
+            fflush(output);
+        }
         
-
     } while(1);
+  
+    //closing streams
     if(input!=stdin)
          fclose(input);
     if(output!=stdout)
