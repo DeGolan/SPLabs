@@ -38,7 +38,11 @@ int main(int argc, char **argv) {
     {
         before=fgetc(input);
         after=before;
+        if((before==EOF ||before==10) && debug){
+            fprintf(stderr,"\nthe number of letters: %i\n\n",letters);
+            letters=0;
 
+        }
         if(feof(input))
             break;
         if(before!=10){
@@ -56,9 +60,7 @@ int main(int argc, char **argv) {
             }     
         }
         else if(debug){//debuging mode
-            fprintf(stderr,"\nthe number of letters: %i\n\n",letters);
-            letters=0;
-
+          
         }
         fprintf(output,"%c",after);
         if(output!=stdout){//flush the file writing stream
