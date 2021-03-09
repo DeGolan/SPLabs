@@ -16,18 +16,8 @@ int main(int argc, char **argv) {
         }
         else if(((argv[i])[0]=='-' ||(argv[i])[0]=='+') && (argv[i])[1]=='e'&& (argv[i])[3]==0 &&
          (((argv[i])[2]>='0' && (argv[i])[2]<='9') ||((argv[i])[2]>='A' && (argv[i])[2]<='F'))){ //encryption mode
-            if((argv[i])[0]=='-'){
-                sign=-1;
-            }
-            else{
-                sign=1;
-            }
-            if((argv[i])[2]>='0' && (argv[i])[2]<='9'){
-                key=(argv[i])[2]-48;
-            }
-            else{
-                key=(argv[i])[2]-55;             
-            }
+            sign=((argv[i])[0]=='-') ? -1 : 1;
+            key= ((argv[i])[2]>='0' && (argv[i])[2]<='9') ? (argv[i])[2]-48 : (argv[i])[2]-55; 
         }   
         else if((argv[i])[0]=='-' && (argv[i])[1]=='i'){ //read from file
             input=fopen(argv[i]+2,"r");
@@ -55,6 +45,7 @@ int main(int argc, char **argv) {
            
             if(sign){//encryption mode
                 after=before+(sign*key);
+                letters++;
             }
             else if(before >= 'A' && before <= 'Z'){//to lowercase
                 letters++;
