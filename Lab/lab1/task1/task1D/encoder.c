@@ -53,4 +53,7 @@ int main(int argc, char **argv) {
         }
         fputc(after,output);
     } while(1);
+     //closing streams
+    if(input!=stdin)
+        fclose(input);
 }
