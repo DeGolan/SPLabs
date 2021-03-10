@@ -62,7 +62,7 @@ int main(int argc, char **argv) {
 
     //closing streams
     if(input!=stdin)
-        fclose(input)
+        fclose(input);
     if(output!=stdout)
         fclose(output);
 }
