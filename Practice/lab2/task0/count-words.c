@@ -6,9 +6,9 @@
 
 /* return string "word" if the count is 1 or "words" otherwise */
 char *words(int count) {
-  char *words  = "words";
+  char *words  = "words"; //read only memory
   if(count==1) 
-     words[strlen(words)-1] = '\0'; //caused the segmentation fault
+     words="word"; 
   return words;
 }
 
