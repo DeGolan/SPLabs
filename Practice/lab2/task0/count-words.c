@@ -2,12 +2,13 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 /* return string "word" if the count is 1 or "words" otherwise */
 char *words(int count) {
-  char *words = "words";
+  char *words  = "words";
   if(count==1) 
-    words = "word"; //cause of the segmentation fault, need to use malloc
+    words = "word"; //caused the segmentation fault
   return words;
 }
 
