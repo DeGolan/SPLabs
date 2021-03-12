@@ -8,7 +8,7 @@
 char *words(int count) {
   char *words  = "words";
   if(count==1) 
-    words = "word"; //caused the segmentation fault
+     words[strlen(words)-1] = '\0'; //caused the segmentation fault
   return words;
 }
 
