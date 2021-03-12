@@ -1,9 +1,9 @@
 all: exec
 
-exec: addresses.c
-	gcc -g -m32 -c -o addresses.o addresses.c
-	gcc -g -m32  addresses.o -o main
-	rm addresses.o
+exec: count-words.c
+	gcc -g -m32 -c -o count-words.o count-words.c
+	gcc -g -m32  count-words.o -o main
+	rm count-words.o
 
 .PHONY: clean
 clean:
