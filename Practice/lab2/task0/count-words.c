@@ -8,7 +8,11 @@
 char *words(int count) {
   char *words  = "words";
   if(count==1) 
+<<<<<<< HEAD
     words = "word"; //caused the segmentation fault
+=======
+    words[strlen(words)-1] = '\0';
+>>>>>>> df804b7333c71ea115aa61e43c5201e33a6da1e4
   return words;
 }
 
