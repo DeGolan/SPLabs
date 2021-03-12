@@ -7,7 +7,7 @@
 char *words(int count) {
   char *words = "words";
   if(count==1) 
-    words = "word"; //cause of the segmentation fault, need to use malloc
+    words[strlen(words)-1] = '\0';
   return words;
 }
 
