@@ -29,7 +29,7 @@ int main (int argc, char** argv){
     
     printf("- &foo1: %p\n" ,&foo1);
     printf("- &foo1: %p\n" ,&foo2);
-    //printf("- &foo2 - &foo1: %ld\n" ,&foo2 - &foo1);
+    //printf("- &foo2 - &foo1: %ld\n" ,&foo2 - &foo1);//
     return 0;
 }
 
