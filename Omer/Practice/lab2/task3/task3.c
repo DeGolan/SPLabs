@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdio_ext.h>
 #include <string.h>
 
 char censor(char c) {
@@ -54,13 +55,8 @@ struct fun_desc menu[]= {{"Censor",censor},{"Encrypt",encrypt},{"Decrypt",decryp
 
 int main(int argc, char **argv){
   int bound=sizeof(menu)/8-1;
-  
-  
-
   int option;
   char* carray=(char*)(malloc(sizeof(char)*5));
-  carray[0]='\0';
-
   do
   {
     fputs("Please choose a function:\n",stdout);
@@ -71,6 +67,7 @@ int main(int argc, char **argv){
     scanf("%d",&option);
     if(option>=0 && option<bound){
       puts("Within bounds");
+      __fpurge(stdin);
       carray = map(carray, 5, menu[option].fun);
       puts("DONE.\n");
     }
