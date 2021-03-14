@@ -1,5 +1,4 @@
 /* $Id: count-words.c 858 2010-02-21 10:26:22Z tolpin $ */
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
