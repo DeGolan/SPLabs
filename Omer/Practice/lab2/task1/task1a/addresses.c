@@ -15,15 +15,15 @@ int main (int argc, char** argv){
     int addr3;
     char* yos="ree";
     int * addr4 = (int*)(malloc(50));
-    printf("- &addr2: %p\n",&addr2);
-    printf("- &addr3: %p\n",&addr3);
-    printf("- foo: %p\n",foo);
-    printf("- &addr5: %p\n",&addr5);
+    printf("- &addr2: %p\n",&addr2); //stack
+    printf("- &addr3: %p\n",&addr3); //stack
+    printf("- foo: %p\n",foo);       //Uninitialized data segment, often called the "bss" segment
+    printf("- &addr5: %p\n",&addr5); //Uninitialized data segment, often called the "bss" segment
     
 	point_at(&addr5);
 	
-    printf("- &addr6: %p\n",&addr6);
-    printf("- yos: %p\n",yos);
+    printf("- &addr6: %p\n",&addr6); ////Uninitialized data segment, often called the "bss" segment
+    printf("- yos: %p\n",yos); 
     printf("- addr4: %p\n",addr4);
     printf("- &addr4: %p\n",&addr4);
     
@@ -47,12 +47,12 @@ void point_at(void *p){
     long dist2 = (size_t)&local - (size_t)p;
     long dist3 = (size_t)&foo - (size_t)p;
     
-    printf("dist1: (size_t)&addr6 - (size_t)p: %ld\n",dist1);
-    printf("dist2: (size_t)&local - (size_t)p: %ld\n",dist2);
+    printf("dist1: (size_t)&addr6 - (size_t)p: %ld\n",dist1); //same area - Uninitialized data segment, often called the "bss" segment 4 bytes dif
+    printf("dist2: (size_t)&local - (size_t)p: %ld\n",dist2); //loacl on stack, p on uninitialized data segment
     printf("dist3: (size_t)&foo - (size_t)p:  %ld\n",dist3);
 	
-	printf("- addr0: %p\n", & addr0);
-    printf("- addr1: %p\n",&addr1);
+	printf("- addr0: %p\n", & addr0); //stack
+    printf("- addr1: %p\n",&addr1); //stack
 }
 
 void foo1 (){    
