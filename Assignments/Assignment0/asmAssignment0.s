@@ -13,7 +13,7 @@ do_Str:                        		; do_Str function definition - functions are de
 	yourCode:			; use label to build a loop for treating the input string characters
                 cmp byte[ecx],' '       ;
 		jne notspace            ; your code goes here...
-                inc word [an]            ;
+                inc dword [an]            ;
         notspace:
                 cmp byte[ecx],'A'
                 jb nextchar
