@@ -7,7 +7,6 @@
 int main(int argc, char **argv)
 {
     FILE *input = stdin;
-    FILE *output = stdout;
     char inChar;
     bool debug = false;
     int numOfChangedChars = 0, i, encoder = 0;
@@ -48,14 +47,8 @@ int main(int argc, char **argv)
             {
                 input = fopen(argv[i] + 2, "r");
             }
-
-            else if (strncmp(argv[i], "-o", 2) == 0)
-            { //write to a file
-                output = fopen(argv[i] + 2, "w");
-            }
         }
-        if (debug)
-        {
+        if(debug){
             printf("%s\n", argv[i]);
         }
     }
@@ -82,19 +75,13 @@ int main(int argc, char **argv)
         }
         if (tempChar != 10)
         {
-            fprintf(output,"%c", inChar);
-        }
-        if (output != stdout)
-        { //flush the file writing stream
-            fflush(output);
+            printf("%c", inChar);
         }
 
     } while (1);
 
     printf("\n");
     fclose(input);
-    if(output!=stdout)
-        fclose(output);
 
     return 0;
 }

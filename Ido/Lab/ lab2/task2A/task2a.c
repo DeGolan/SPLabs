@@ -19,8 +19,8 @@ char* map(char *array, int array_length, char (*f) (char)){
  
 int main(int argc, char **argv){
   /* TODO: Test your code */
-    char arr1[] = {'!','H','E','Y','!'};
-    char* arr2 = map(arr1, 5, censor);
+    char arr1[] = {'H','E','Y','!'};
+    char* arr2 = map(arr1, 4, censor);
     printf("%s\n", arr2); 
     free(arr2);
     return 0;
