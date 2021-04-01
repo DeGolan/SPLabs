@@ -73,6 +73,7 @@ void list_free(link *virus_list){
     while (tmp!=NULL){
         link* tmp2=tmp;
         tmp=tmp->nextVirus;
+        free(tmp2->vir->sig);
         free(tmp2->vir);
         free(tmp2);
     } 
@@ -85,13 +86,13 @@ link* load_signatures(link* virus_list){
   
     char *path = NULL;
     int read;
-    unsigned int len;/*
+    unsigned int len;
     fprintf(stdout, "Enter file path:\n");  
     read = getline(&path, &len, stdin);
     if (-1 == read)
         printf("No line read...\n");
-    path[strlen(path)-1] = '\0';*///need to switch back
-    FILE *input = fopen("signatures-L", "rb");
+    path[strlen(path)-1] = '\0';
+    FILE *input = fopen(path, "rb");
    
 
     if (input == NULL){
@@ -113,7 +114,6 @@ link* load_signatures(link* virus_list){
             break;
         }
         virus_list=list_append(virus_list,virus);  
-        //free(virus->sig);   need to move!!    
     }
     free(path);
     free(header);
@@ -138,7 +138,6 @@ link* detect_viruses(char* buffer, unsigned int size, link *virus_list,FILE* out
                 printf("The size of the virus: %d\n\n",tmp->vir->SigSize);
             }
         }
-        //PrintHex(tmp->vir->sig,tmp->vir->SigSize,stdout);
         tmp=tmp->nextVirus;
         
     }  
@@ -148,9 +147,8 @@ link* detect_viruses(char* buffer, unsigned int size, link *virus_list,FILE* out
 link* detect_viruses_1(link* virus_list){
 
     FILE * input;
-    char *buffer=(char*)malloc(sizeof(char)*1000);
     input=fopen(file_name,"r");
-    
+    char *buffer=(char*)malloc(sizeof(char)*1000);
     //file size
     fseek (input , 0 , SEEK_END);
     int length = ftell (input);
@@ -164,17 +162,6 @@ link* detect_viruses_1(link* virus_list){
     free(buffer);
     fclose(input);
     return virus_list;
-    /*
-    FILE* file=fopen(file_name,"rb");
-    if(file!=NULL){
-        char buffer[10000];
-        fseek(file,0L,SEEK_END);
-        unsigned int size=ftell(file);
-        fread(&buffer,sizeof(char),size,file);
-        detect_viruses(buffer,size,virus_list,stdout);
-        fclose(file);
-    }
-    return virus_list;*/
 }
 
 int main(int argc, char **argv) {

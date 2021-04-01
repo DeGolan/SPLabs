@@ -15,6 +15,9 @@ struct link {
     link *nextVirus;
     virus *vir;
 };
+
+char *file_name;
+
 void PrintHex(char* buffer,int length,FILE* output){
     for (int i = 0; i < length; i++){
         if(i%22==0 && i>0){
@@ -39,6 +42,7 @@ void printVirus(virus* virus, FILE* output){
     fprintf(output,"\nVirus Size: %d\nSignature:\n",virus->SigSize);
     PrintHex(virus->sig,virus->SigSize,output);
 }
+
 void list_print(link *virus_list, FILE* output){
     link*tmp=virus_list;
     while (tmp!=NULL){
@@ -65,6 +69,7 @@ link* list_append(link* virus_list, virus* data){
     
     return virus_list; 
 }
+
 void list_free(link *virus_list){
     link*tmp=virus_list;
     while (tmp!=NULL){
@@ -75,10 +80,12 @@ void list_free(link *virus_list){
         free(tmp2);
     } 
 }
+
 struct fun_desc {
   char *name;
   link* (*fun)(link*);
 };
+
 link* load_signatures(link* virus_list){
   
     char *path = NULL;
@@ -89,7 +96,7 @@ link* load_signatures(link* virus_list){
     if (-1 == read)
         printf("No line read...\n");
     path[strlen(path)-1] = '\0';
-    FILE *input = fopen(path, "r");
+    FILE *input = fopen(path, "rb");
    
 
     if (input == NULL){
@@ -98,7 +105,6 @@ link* load_signatures(link* virus_list){
         exit(1);
     }
 
-   
     char* header=(char*)malloc(sizeof(char)*4);
     fread(header,1,4,input);  
     
@@ -109,27 +115,89 @@ link* load_signatures(link* virus_list){
             free(virus->sig);
             free(virus);
             break;
-        }    
-        virus_list=list_append(virus_list,virus);    
-        
+        }
+        virus_list=list_append(virus_list,virus);  
     }
-    
     free(path);
     free(header);
     fclose(input);
     
     return virus_list;
 }
+
 link* print_signatures(link* virus_list){
     printf("Printing\n");
     list_print(virus_list,stdout);
     return virus_list;
 }
 
+link* detect_viruses(char* buffer, unsigned int size, link *virus_list,FILE* output){
+    int counter=1;
+    link*tmp=virus_list;
+    while (tmp!=NULL){
+        //action
+        for (int i = 0; i <= size-tmp->vir->SigSize; i++){
+            if(!memcmp(buffer+i,tmp->vir->sig,tmp->vir->SigSize)){
+                printf("The Starting byte loaction: %d\n",i);
+                printf("The Virus name: %s\n",tmp->vir->virusName);
+                printf("The size of the virus: %d\n\n",tmp->vir->SigSize);
+            }
+        }
+        tmp=tmp->nextVirus;
+        
+    }  
+    return virus_list;
+ 
+}
+
+link* detect_viruses_1(link* virus_list){
+
+    FILE * input;
+    input=fopen(file_name,"rt");
+    char *buffer=(char*)malloc(sizeof(char)*1000);
+    //file size
+    fseek (input , 0 , SEEK_END);
+    int length = ftell (input);
+    rewind (input);
+    fread(buffer,1,10000,input);
+
+    if(length>10000){
+        length=10000;
+    }
+    virus_list=detect_viruses(buffer,length,virus_list,stdout);
+    free(buffer);
+    fclose(input);
+    return virus_list;
+}
+
+void* fix_file(char *filename, int signitureOffset,int signituresSize){
+    FILE * input;
+    input=fopen(filename,"r+");
+    char *buffer=(char*)malloc(sizeof(char)*signituresSize);
+    for (int i = 0; i < signituresSize; i++){
+        buffer[i]=0x90;//nop
+    } 
+    fseek (input , signitureOffset , SEEK_SET);
+    fwrite(buffer,1,signituresSize,input);
+
+    free(buffer);
+    fclose(input); 
+}
+link* fix_file1(link* virus_list){
+    int suspectByte,virusSize;
+    printf("\nEnter the starting byte location: ");
+    scanf("%d",&suspectByte);
+    printf("\nEnter the size of the virus: ");
+    scanf("%d",&virusSize);
+    printf("\n%d, %d\n ",suspectByte,virusSize);
+    fix_file(file_name,suspectByte,virusSize);
+    return virus_list;
+}
+
 int main(int argc, char **argv) {
-   
+    file_name=argv[1];
     link* virus_list=NULL;
-    struct fun_desc menu[]= {{"Load signatures",load_signatures},{"Print signatures",print_signatures},{NULL,NULL}};
+    struct fun_desc menu[]= {{"Load signatures",load_signatures},{"Print signatures",print_signatures},{"Detect viruses",detect_viruses_1},{"Fix file",fix_file1},{NULL,NULL}};
     int bound=sizeof(menu)/8-1;
     int option;
 
