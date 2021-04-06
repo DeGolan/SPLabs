@@ -194,10 +194,35 @@ link *detectViruses(link *viruses)
     return viruses;
 }
 
+void* kill_virus(char *filename, int signatureOffset,int signatureSize){
+    FILE * input;
+    input=fopen(filename,"r+");
+    char *buffer=(char*)malloc(sizeof(char)*signatureSize);
+    for (int i = 0; i < signatureSize; i++){
+        buffer[i]=0x90;//nop
+    } 
+    fseek (input , signatureOffset , SEEK_SET);
+    fwrite(buffer,1,signatureSize,input);
+
+    free(buffer);
+    fclose(input); 
+}
+
+link* fix_file(link* virus_list){
+    int suspectByte,virusSize;
+    printf("Enter the starting byte location: \n");
+    scanf("%d",&suspectByte);
+    printf("Enter the size of the virus: \n");
+    scanf("%d",&virusSize);
+    // printf("%d, %d\n ",suspectByte,virusSize);
+    kill_virus(FILEPATH,suspectByte,virusSize);
+    return virus_list;
+}
+
 int main(int argc, char **argv)
 {
     FILEPATH = argv[1];
-    struct fun_desc menu[] = {{"Load Signatures", loadSignatures}, {"Print Signatures", printSignature}, {"Detect Viruses", detectViruses}, {NULL, NULL}};
+    struct fun_desc menu[] = {{"Load Signatures", loadSignatures}, {"Print Signatures", printSignature}, {"Detect Viruses", detectViruses},{"Fix File", fix_file}, {NULL, NULL}};
     int upperBound = sizeof(menu) / 8 - 1; // /8 for size ofstruct (2 pointers) -1 for the null at the end
     link *viruses = NULL;
     int i = 0;

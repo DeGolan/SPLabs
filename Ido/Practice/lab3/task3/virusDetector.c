@@ -42,6 +42,26 @@ virus *readVirus(FILE *file)
     return newVirus;
 }
 
+virus* readVirusBE(FILE* input){
+   
+    virus* newVirus=(virus*)calloc (sizeof(virus),1);
+    
+    char firstbyte=fgetc(input);
+    char secondbyte=fgetc(input);
+    newVirus->SigSize=firstbyte*256+secondbyte;
+
+    fread(newVirus->virusName,1,16,input);
+    newVirus->sig=(unsigned char*)calloc (sizeof(unsigned char*)*(newVirus->SigSize),1);
+    fseek(input,0,SEEK_CUR+newVirus->SigSize);
+    //sig
+    for(int i=0; i<newVirus->SigSize; i++){
+        newVirus->sig[i]=fgetc(input);
+        fseek(input,0,SEEK_CUR-2);
+    }
+    fseek(input,0,SEEK_CUR+newVirus->SigSize);
+    return newVirus;
+}
+
 void printVirus(virus *virus, FILE *output)
 {
     fprintf(output, "Virus name:%s\n", virus->virusName);
@@ -132,7 +152,13 @@ link *loadSignatures(link *viruses)
     fread(buffer, 1, 4, input); //reads the first 4 bytes with the signature
     while (1)
     {
-        virus *virus = readVirus(input);
+        virus *virus;
+        if(!strcmp(buffer,"VISB")){
+            virus = readVirusBE(input);
+        }
+        else{
+            virus=readVirus(input);
+        }
         if (feof(input)) //best way to exit loop
         {
             free(virus->sig);
@@ -194,10 +220,35 @@ link *detectViruses(link *viruses)
     return viruses;
 }
 
+void* kill_virus(char *filename, int signatureOffset,int signatureSize){
+    FILE * input;
+    input=fopen(filename,"r+");
+    char *buffer=(char*)malloc(sizeof(char)*signatureSize);
+    for (int i = 0; i < signatureSize; i++){
+        buffer[i]=0x90;//nop
+    } 
+    fseek (input , signatureOffset , SEEK_SET);
+    fwrite(buffer,1,signatureSize,input);
+
+    free(buffer);
+    fclose(input); 
+}
+
+link* fix_file(link* virus_list){
+    int suspectByte,virusSize;
+    printf("Enter the starting byte location: \n");
+    scanf("%d",&suspectByte);
+    printf("Enter the size of the virus: \n");
+    scanf("%d",&virusSize);
+    printf("%d, %d\n ",suspectByte,virusSize);
+    kill_virus(FILEPATH,suspectByte,virusSize);
+    return virus_list;
+}
+
 int main(int argc, char **argv)
 {
     FILEPATH = argv[1];
-    struct fun_desc menu[] = {{"Load Signatures", loadSignatures}, {"Print Signatures", printSignature}, {"Detect Viruses", detectViruses}, {NULL, NULL}};
+    struct fun_desc menu[] = {{"Load Signatures", loadSignatures}, {"Print Signatures", printSignature}, {"Detect Viruses", detectViruses},{"Fix File", fix_file}, {NULL, NULL}};
     int upperBound = sizeof(menu) / 8 - 1; // /8 for size ofstruct (2 pointers) -1 for the null at the end
     link *viruses = NULL;
     int i = 0;
