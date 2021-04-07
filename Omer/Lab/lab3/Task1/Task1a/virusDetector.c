@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
     FILE * input=stdin;
     char *buffer;
     
-    input=fopen(argv[1],"r");
+    input=fopen(argv[1],"rb");
     if(input==NULL){ 
         fprintf(stderr,"File not found\n");
         exit (1);
