@@ -13,7 +13,7 @@ convertor:
 	mov ebp, esp	
 	pushad			
         mov ecx, dword [ebp+8]	; get function argument (pointer to string)
-
+        mov [an], ecx
 	; your code comes here...
 
 	push an			; call printf with 2 arguments -  
