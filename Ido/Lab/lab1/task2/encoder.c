@@ -1,68 +1,100 @@
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
+#include <ctype.h>
 
-int main(int argc, char **argv) {
-    FILE* input = stdin;
-    FILE* output = stdout;
-    char before,after;
-    int debug = 0,letters = 0,sign = 0,key = 0;
+int main(int argc, char **argv)
+{
+    FILE *input = stdin;
+    FILE *output = stdout;
+    char inChar;
+    bool debug = false;
+    int numOfChangedChars = 0, i, encoder = 0;
+    char tempChar, temp;
 
-    for(int i=1 ; i < argc ; i++){//receiving arguments
-        if(strcmp(argv[i],"-D") == 0){//debug mode
-            debug = 1;
-            fprintf(stderr,"-D\n");
+    for (i = 1; i < argc; i++)
+    {
+        if (strcmp(argv[i], "-D") == 0)
+        {
+            debug = true;
         }
-        else if(((argv[i])[0] == '-' ||(argv[i])[0] == '+') && (argv[i])[1] == 'e'&& (argv[i])[3] == 0 &&
-         (((argv[i])[2] >= '0' && (argv[i])[2] <= '9') || ((argv[i])[2] >= 'A' && (argv[i])[2] <= 'F'))){ //encryption mode
-            sign = ((argv[i])[0] == '-') ? -1 : 1;
-            key = ((argv[i])[2] >= '0' && (argv[i])[2] <= '9') ? (argv[i])[2] - 48 : (argv[i])[2] - 55; 
-        }
-        else if(strncmp(argv[i],"-i",2) == 0){ //read from file
-            input = fopen(argv[i]+2,"r");
-            if(input == NULL){ 
-                fprintf(stderr,"File not found\n");
-                return 1;
+        else
+        {
+            temp = (argv[i][2]);
+            if (strncmp(argv[i], "+e", 2) == 0 && isxdigit(temp))
+            {
+                if (temp >= 'A')
+                {
+                    encoder = (temp - 'A' + 10);
+                }
+                else
+                {
+                    encoder = (temp - '0');
+                }
+            }
+            else if (strncmp(argv[i], "-e", 2) == 0 && isxdigit(temp))
+            {
+                if (temp >= 'A')
+                {
+                    encoder = -(temp - 'A' + 10);
+                }
+                else
+                {
+                    encoder = -(temp - '0');
+                };
+            }
+            else if (strncmp(argv[i], "-i", 2) == 0)
+            {
+                input = fopen(argv[i] + 2, "r");
+            }
+
+            else if (strncmp(argv[i], "-o", 2) == 0)
+            { //write to a file
+                output = fopen(argv[i] + 2, "w");
             }
         }
-        else if(strncmp(argv[i],"-o",2) == 0){ //write to a file
-            output = fopen(argv[i]+2,"w");
+        if (debug)
+        {
+            printf("%s\n", argv[i]);
         }
-        else{//throw err if the parameter is invalid
-            fprintf(stderr,"invalid parameter - %s\n",argv[i]);
-	        return 1;
-        }  
     }
-    do {//encoder main loop
-        before = after = fgetc(input);//receving char from input
-        if((before == EOF || before == 10) && debug){//debug mode
-            fprintf(stderr,"\nthe number of letters: %i\n\n",letters);
-            letters=0;
+
+    do
+    {
+        inChar = fgetc(input);
+        if ((debug) && ((inChar == EOF) || inChar == 10))
+        {
+            fprintf(stderr, "number of changed letters= %i\n", numOfChangedChars);
+            numOfChangedChars = 0;
         }
-        if(before == EOF){//if eof break the loop
+        if (feof(input))
+        {
             break;
         }
-        if(before != 10) {//check new line
-            if(sign){//encryption mode
-                after = before + (sign * key);
-                letters++;
-            }
-            else if(before >= 'A' && before <= 'Z'){//to lowercase
-                after = before + ('a' - 'A');
-                letters++;
-            }   
-            if(debug){//debug mode
-            fprintf(stderr,"%i %i\n", before,after);    
-            } 
+        tempChar = inChar;
+        inChar = inChar + encoder;
+        numOfChangedChars++;
+
+        if (debug && tempChar != 10)
+        {
+            fprintf(stderr, "%d %d\n", tempChar, inChar);
         }
-        fputc(after,output);
-        if(output != stdout){//flush the file writing stream
+        if (tempChar != 10)
+        {
+            fprintf(output,"%c", inChar);
+        }
+        if (output != stdout)
+        { //flush the file writing stream
             fflush(output);
         }
-    } while(1);
 
-    //closing streams
-    if(input!=stdin)
-        fclose(input);
+    } while (1);
+
+    printf("\n");
+    fclose(input);
     if(output!=stdout)
         fclose(output);
+
+    return 0;
 }
