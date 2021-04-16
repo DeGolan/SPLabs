@@ -14,17 +14,15 @@ convertor:
 	mov ebp, esp	
 	pushad			
 	mov ecx, dword [ebp+8]	; get function argument (pointer to string)
-	;add ecx,1
-	;mov eax,[ecx]
-	;mov [an],al
 
 	;your code comes here...
-	
 	mov ebx,0 ;main counter j
 	mov edx,0 ;bufLoc
 
 mainLoop:
 	mov eax,[ecx]
+	cmp al,'q'
+	je break
 	cmp al,0	;buf[j] != 0
 	je rest
 	cmp al,10	;buf[j] != 0
@@ -65,7 +63,6 @@ even:
 	mov byte[an+edx],'0'
 cont1:
 	
-	
 	jmp convert
 
 endOfLoop:
@@ -75,13 +72,36 @@ endOfLoop:
 	jmp mainLoop
 
 rest:
+
 	mov byte [an+4*ebx],0
-	push an			; call printf with 2 arguments -  
+
+	mov ecx,0
+zeroCheck:
+	
+	cmp byte[an+ecx],'0'
+	jne print
+	inc ecx
+	jmp zeroCheck
+
+	
+
+	
+print:
+	mov ebx,an
+	add ebx,ecx
+
+	push ebx			; call printf with 2 arguments -  
 	push format_string	; pointer to str and pointer to format string
 	call printf
 	add esp, 8		; clean up stack after call
+	
+	popad
+	mov eax,0
+	jmp fin
+break:	
+	mov eax,-1	
 
-	popad			
+fin:
 	mov esp, ebp	
 	pop ebp
 	ret
