@@ -3,9 +3,10 @@
 #define SYS_WRITE 4
 #define STDOUT 1
 #define SYS_READ 3
+#define SYS_OPEN 5
 #define STDIN 0
 #define STDERR 2
-extern void system_call();
+extern int system_call();
 
 int main(int argc, char **argv)
 {
@@ -13,6 +14,9 @@ int main(int argc, char **argv)
     int debug = 0;
     int numOfChangedChars = 0, i;
     char tempChar;
+    int fdIn=STDIN;
+    int fdOut=STDOUT;
+    int error;
 
     for (i = 1; i < argc; i++)
     {
@@ -22,19 +26,27 @@ int main(int argc, char **argv)
             system_call(SYS_WRITE, STDOUT, argv[1], strlen(argv[1]));
             system_call(SYS_WRITE, STDOUT, "\n", 1);
         }
+        else if (strncmp(argv[i], "-i", 2) == 0)
+        {
+            fdIn = system_call(SYS_OPEN,argv[i] + 2, 0);
+        }
+        else if (strncmp(argv[i], "-o", 2) == 0)
+        {
+            fdOut = system_call(SYS_OPEN,argv[i] + 2, 1|64,"rw");
+        }
     }
     do
     {
-        system_call(SYS_READ, STDIN, &inChar, 1);
+        error=system_call(SYS_READ, fdIn, &inChar, 1);
 
         if ((debug) && ((inChar == 0) || inChar == 10))
         {
-            system_call(SYS_WRITE, STDOUT, "\nnumber of changed letters= ", 29);
-            system_call(SYS_WRITE, STDOUT, itoa(numOfChangedChars), 3);
-            system_call(SYS_WRITE, STDOUT, "\n", 1);
+            system_call(SYS_WRITE, fdOut, "\nnumber of changed letters= ", 29);
+            system_call(SYS_WRITE, fdOut, itoa(numOfChangedChars), 3);
+            system_call(SYS_WRITE, fdOut, "\n", 1);
             numOfChangedChars = 0;
         }
-        if (inChar==0)
+        if (error <= 0)
         {
             break;
         }
@@ -51,11 +63,12 @@ int main(int argc, char **argv)
             system_call(SYS_WRITE, STDERR, "\n", 1);
         }
 
-        system_call(SYS_WRITE, STDOUT, &inChar, 1);
+        system_call(SYS_WRITE, fdOut, &inChar, 1);
 
     } while (1);
+    system_call(SYS_WRITE, fdOut, "\n", 1);
 
-    system_call(6, STDIN, "", 0);
+    system_call(6, fdIn);
 
     return 0;
 }
