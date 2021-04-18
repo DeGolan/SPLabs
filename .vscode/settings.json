@@ -2,6 +2,7 @@
     "C_Cpp.errorSquiggles": "Disabled",
     "files.associations": {
         "sstream": "c",
-        "util.h": "c"
+        "util.h": "c",
+        "dirent.h": "c"
     }
 }

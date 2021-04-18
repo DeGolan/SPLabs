@@ -5,7 +5,6 @@
 #define SYS_WRITE 4
 #define SYS_READ 3
 #define SYS_LSEEK 19
-
 #define STDIN 0
 #define STDOUT 1
 #define STDERR 2
