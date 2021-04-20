@@ -28,11 +28,11 @@ int main(int argc, char **argv)
         }
         else if (strncmp(argv[i], "-i", 2) == 0)
         {
-            fdIn = system_call(SYS_OPEN,argv[i] + 2, 0);
+            fdIn = system_call(SYS_OPEN,argv[i] + 2, 0,0777);
         }
         else if (strncmp(argv[i], "-o", 2) == 0)
         {
-            fdOut = system_call(SYS_OPEN,argv[i] + 2, 1|64,"rw");
+            fdOut = system_call(SYS_OPEN,argv[i] + 2, 1|64,0777);
         }
     }
     do
