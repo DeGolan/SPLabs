@@ -1,7 +1,7 @@
 #include "util.h"
 
 #define SYS_OPEN 5
-#define STS_CLOSE 6
+#define SYS_CLOSE 6
 #define SYS_WRITE 4
 #define SYS_READ 3
 #define SYS_LSEEK 19
@@ -25,7 +25,7 @@ int main (int argc , char* argv[], char* envp[])
         if(strncmp(argv[i],"-i",2) == 0){ 
             input = system_call(SYS_OPEN,argv[i]+2,O_RDONLY,0777);
             if(input <0){ 
-                system_call(1,0x55);
+                system_call(1,0x55); 
             }
         } 
         else if(strncmp(argv[i],"-o",2) == 0){ 
@@ -51,7 +51,12 @@ int main (int argc , char* argv[], char* envp[])
   
       system_call(SYS_WRITE,output,&after,1);
     } while(1);
-
+    if(input!=STDIN){
+        system_call(SYS_CLOSE,input);
+    }
+    if(output!=STDOUT){
+        system_call(SYS_CLOSE,output);
+    }
 
   return 0;
 }
