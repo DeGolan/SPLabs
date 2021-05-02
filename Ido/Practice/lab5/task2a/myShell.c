@@ -25,6 +25,22 @@ int debug = 0;
 #define SUSPENDED 0
 process *process_List;
 
+char *returnStatus(int status)
+{
+    switch (status)
+    {
+    case -1:
+        return "TERMINATED";
+    case 0:
+        return "SUSPENDED";
+    case 1:
+        return "RUNNING";
+    default:
+        break;
+    }
+    return "";
+}
+
 void addProcess(process **process_list, cmdLine *cmd, pid_t pid)
 {
     process *newProcess = (process *)malloc(sizeof(process));
@@ -40,7 +56,7 @@ void printProcessList(process **process_list)
     printf("PID     Command     STATUS\n");
     for_each(proc, process_list)
     {
-        printf("%d      %s      %d\n", proc->pid, proc->cmd->arguments[0], proc->status);
+        printf("%d      %s      %s\n", proc->pid, proc->cmd->arguments[0], returnStatus(proc->status));
     }
 }
 
@@ -104,6 +120,7 @@ int main(int argc, char **argv)
         else
         {
             pid_t pid = fork();
+            addProcess(&process_List, line, pid);
             if (pid == -1)
             {
                 perror("Could not fork");
@@ -113,9 +130,8 @@ int main(int argc, char **argv)
             {
                 execute(line);
             }
-            else if (line->blocking == 0)
+            else if (line->blocking)
             {
-                addProcess(&process_List, line, pid);
                 waitpid(pid, NULL, 0);
             }
         }
