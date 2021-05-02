@@ -12,7 +12,7 @@ int debug = 0;
 void execute(cmdLine *pCmdLine)
 {
     pid_t pid = fork();
-    int* statLoc;
+    int statLoc[0];
     if (pid == -1)
     {
         perror("Could not fork");
