@@ -6,14 +6,14 @@ asm-lib: start.s
 	
 	nasm -f elf32 start.s -o start.o
 
-c-lib: main.c util.c
+c-lib: task2c.c util.c
 	
 	gcc -m32 -Wall -ansi -c -nostdlib -fno-stack-protector util.c -o util.o
-	gcc -m32 -Wall -ansi -c -nostdlib -fno-stack-protector main.c -o main.o
+	gcc -m32 -Wall -ansi -c -nostdlib -fno-stack-protector task2c.c -o task2c.o
 
 exec: libs
-	ld -m elf_i386 start.o main.o util.o -o flame2
-	rm util.o start.o main.o
+	ld -m elf_i386 start.o task2c.o util.o -o flame2
+	rm util.o start.o task2c.o
 
 .PHONY: clean
 clean:

@@ -3,6 +3,7 @@
     "files.associations": {
         "sstream": "c",
         "util.h": "c",
-        "dirent.h": "c"
+        "dirent.h": "c",
+        "algorithm": "c"
     }
 }
