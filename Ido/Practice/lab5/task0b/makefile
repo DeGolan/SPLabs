@@ -1,15 +1,12 @@
-all: myShell
+all: looper
 
-myShell: myShell.o LineParser.o
-	gcc -m32 -g -Wall -o myShell myShell.o LineParser.o
+looper: looper.o 
+	gcc -m32 -g -Wall -o looper looper.o
 	rm -rf ./*.o
 
-myShell.o: myShell.c
-	gcc -g -Wall -m32 -c -o myShell.o myShell.c
-
-LineParser.o: LineParser.c
-	gcc -g -Wall -m32 -c -o LineParser.o LineParser.c
+looper.o: looper.c
+	gcc -g -Wall -m32 -c -o looper.o looper.c
 
 .PHONY: clean
 clean:
-	rm -rf ./*.o myShell
+	rm -rf ./*.o looper
