@@ -8,11 +8,11 @@ asm-lib: asm_task2Assignment1.s
 
 c-lib: main_task2Assignment1.c
 	
-	gcc -g -m32 -c -o main_task2Assignment1.o main_task2Assignment1.c
+	gcc -g -m32 -c -o main_task1Assignment2.o main_task1Assignment2.c
 
 exec: libs
-	gcc -g -m32  main_task2Assignment1.o asm_task2Assignment1.o -o main
-	rm main_task2Assignment1.o asm_task2Assignment1.o
+	gcc -g -m32  main_task1Assignment2.o asm_task2Assignment1.o -o main
+	rm main_task1Assignment2.o asm_task2Assignment1.o
 
 .PHONY: clean
 clean:
