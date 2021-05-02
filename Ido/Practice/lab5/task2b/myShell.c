@@ -25,6 +25,22 @@ int debug = 0;
 #define SUSPENDED 0
 process *process_List;
 
+char *returnStatus(int status)
+{
+    switch (status)
+    {
+    case -1:
+        return "TERMINATED";
+    case 0:
+        return "SUSPENDED";
+    case 1:
+        return "RUNNING";
+    default:
+        break;
+    }
+    return "";
+}
+
 void addProcess(process **process_list, cmdLine *cmd, pid_t pid)
 {
     process *newProcess = (process *)malloc(sizeof(process));
@@ -35,12 +51,51 @@ void addProcess(process **process_list, cmdLine *cmd, pid_t pid)
     *process_list = newProcess;
 }
 
+void updateProcessStatus(process *process_list, int pid, int status)
+{
+    for_each(proc, &process_list)
+    {
+        if (proc->pid == pid)
+        {
+            proc->status = status;
+        }
+    }
+}
+
+void updateProcessList(process **process_list)
+{
+    int status = 0;
+    for_each(proc, process_list)
+    {
+        if (waitpid(proc->pid, &status, WNOHANG) != 0)
+        {
+            if (status == 0)
+            {
+                updateProcessStatus(*process_list, proc->pid, -1);
+            }
+        }
+    }
+}
+
 void printProcessList(process **process_list)
 {
+    updateProcessList(process_list);
     printf("PID     Command     STATUS\n");
     for_each(proc, process_list)
     {
-        printf("%d      %s      %d\n", proc->pid, proc->cmd->arguments[0], proc->status);
+        printf("%d      %s      %s\n", proc->pid, proc->cmd->arguments[0], returnStatus(proc->status));
+    }
+}
+
+void freeProcessList(process *process_list)
+{
+    process *curr = process_list;
+    while (curr != NULL)
+    {
+        process *tmp = curr->next;
+        free(curr->cmd);
+        curr->next = NULL;
+        curr = tmp;
     }
 }
 
@@ -104,6 +159,7 @@ int main(int argc, char **argv)
         else
         {
             pid_t pid = fork();
+            addProcess(&process_List, line, pid);
             if (pid == -1)
             {
                 perror("Could not fork");
@@ -113,9 +169,8 @@ int main(int argc, char **argv)
             {
                 execute(line);
             }
-            else if (line->blocking == 0)
+            else if (line->blocking)
             {
-                addProcess(&process_List, line, pid);
                 waitpid(pid, NULL, 0);
             }
         }
