@@ -24,7 +24,6 @@ void execute(cmdLine *pCmdLine) {
         perror("Error");
         _exit(1);
     }
-    
 }
     
 void addProcess(process** process_list, cmdLine* cmd, pid_t pid){
@@ -42,9 +41,64 @@ void printProcessList(process** process_list){
     printf("PID    Command    STATUS\n");
     process* temp=*process_list;
     while (temp!=NULL){
-        printf("%d    %s           %d\n",temp->pid,temp->cmd->arguments[0],temp->status);
+      
+        printf("%d    %s           %s\n",temp->pid,temp->cmd->arguments[0],(temp->status==SUSPENDED)?"SUSPENDED":(temp->status==RUNNING)?"RUNNING":"TERMINATED");
         temp=temp->next;
     }
+}
+
+void freeProcessList(process* process_list){
+    process* curr = process_list;
+    while(curr!=NULL){
+        process* tmp = curr->next;
+        free(curr->cmd);
+        curr->next = NULL;
+        curr = tmp;
+    }
+}
+
+void updateProcessStatus(process* process_list, int pid, int status){
+    
+    process* curr = process_list;
+    while(curr->pid!=pid) curr= curr->next;
+
+    curr->status = status;
+}
+
+void updateProcessList(process **process_list){
+
+    process* curr = *(process_list);
+    while(curr!=NULL){
+        int newStatus=0;
+        int res = waitpid(curr->pid,&newStatus,WNOHANG | WUNTRACED | WCONTINUED); //checking proc status
+        if(res>0) // Terminate
+            updateProcessStatus(*process_list,curr->pid,TERMINATED);
+
+        curr = curr->next;
+    }
+        
+}
+
+
+
+void deleteProcess(process** process_list){
+    process* curr=*process_list;
+    process* prev=curr;
+
+    while(curr!=NULL){
+        if(curr->status==TERMINATED){
+            prev->next=curr->next;
+            //delete curr
+            curr=prev->next;
+            
+        }
+        else{
+            prev=curr;
+            curr=curr->next;
+        }
+      
+    }
+
 }
 
 int main(int argc, char **argv) {
@@ -89,13 +143,22 @@ int main(int argc, char **argv) {
             else if(strcmp(input->arguments[0],"procs")==0){//print all processes
                 printProcessList(&process_list);
             }
-            else if(!(cpid=fork())){//Code child
-                execute(input);
+            else if(!(cpid=fork())){//Code child 
+                if(strcmp(input->arguments[0],"procs")==0){
+                    //do
+                }
+                else{
+                     execute(input);
+                }
+
+                      
+              
             }
            else{//Code of parent
                 addProcess(&process_list,input,cpid);
                 if(input->blocking){
                    int res = waitpid(cpid,NULL,0);
+                   updateProcessStatus(process_list,res,TERMINATED);
                 }
             }
         }

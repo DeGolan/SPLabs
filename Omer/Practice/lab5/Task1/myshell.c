@@ -61,8 +61,9 @@ int main(int argc, char **argv) {
                 execute(input);
             }
             else{//Code of parent
-                if(input->blocking)
-                    waitpid(cpid,NULL,0);
+                if(input->blocking){
+                   int res = waitpid(cpid,NULL,0);
+                }
             }
         }
       
