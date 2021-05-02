@@ -11,37 +11,23 @@ int debug = 0;
 
 void execute(cmdLine *pCmdLine)
 {
-    pid_t pid = fork();
-    int *statLoc = 0;
-    if (pid == -1)
+    if (debug)
     {
-        perror("Could not fork");
-        _exit(1);
+        fprintf(stderr, "PID: %d\n", getpid());
+        fprintf(stderr, "Executing command: %s\n", pCmdLine->arguments[0]);
     }
-    if (pid == 0)
+    if (!strcmp(pCmdLine->arguments[0], "cd"))
     {
-        if (debug)
-        {
-            fprintf(stderr, "PID: %d\n", getpid());
-            fprintf(stderr, "Executing command: %s\n", pCmdLine->arguments[0]);
-        }
-        if (!strcmp(pCmdLine->arguments[0], "cd"))
-        {
-            if (chdir(pCmdLine->arguments[1]) == -1)
-            {
-                perror("Error");
-                _exit(1);
-            }
-        }
-        else if (execvp(pCmdLine->arguments[0], pCmdLine->arguments) == -1)
+        if (chdir(pCmdLine->arguments[1]) == -1)
         {
             perror("Error");
             _exit(1);
         }
     }
-    else
+    else if (execvp(pCmdLine->arguments[0], pCmdLine->arguments) == -1)
     {
-        waitpid(pid, statLoc, WEXITED);
+        perror("Error");
+        _exit(1);
     }
 }
 
@@ -76,7 +62,22 @@ int main(int argc, char **argv)
         }
         //parse and execute command
         line = parseCmdLines(buff);
-        execute(line);
+        pid_t pid = fork();
+        int *statLoc = 0;
+        if (pid == -1)
+        {
+            perror("Could not fork");
+            _exit(1);
+        }
+        else if (pid == 0)
+        {
+            execute(line);
+        }
+        else if (line->blocking == 0)
+        {
+            waitpid(pid, statLoc, 0);
+        }
+
         //free(line);
     } while (1);
     return 0;
