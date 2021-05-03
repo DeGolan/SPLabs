@@ -35,13 +35,13 @@ void addProcess(process** process_list, cmdLine* cmd, pid_t pid){
     *process_list=newProcess; 
 }
 
-
 void freeProcessList(process* process_list){
     process* curr = process_list;
     while(curr!=NULL){
         process* tmp = curr->next;
-        free(curr->cmd);
+        freeCmdLines(curr->cmd);
         curr->next = NULL;
+        free(curr);
         curr = tmp;
     }
 }
@@ -49,14 +49,14 @@ void freeProcessList(process* process_list){
 void updateProcessStatus(process* process_list, int pid, int status){
     
     process* curr = process_list;
-    while(curr->pid!=pid) curr= curr->next;
-
+    while(curr->pid!=pid){
+         curr= curr->next;
+    }
     curr->status = status;
 }
 
 void updateProcessList(process **process_list){
-
-    process* curr = *(process_list);
+    process* curr = *process_list;
     while(curr!=NULL){
         int newStatus=0;
         int res = waitpid(curr->pid,&newStatus,WNOHANG | WUNTRACED | WCONTINUED); //checking proc status
@@ -73,10 +73,47 @@ void updateProcessList(process **process_list){
                 updateProcessStatus(*process_list,curr->pid,RUNNING);
             }
         }
-
         curr = curr->next;
+    }      
+}
+
+void deleteProcess(process* process){
+        freeCmdLines(process->cmd);
+        free(process);
+}
+
+void deleteProcesses(process** process_list){
+    process* curr=*process_list;
+    process* prev=curr;
+    while(curr!=NULL){
+        if(curr->status==TERMINATED){  
+            if(curr==prev){//HEAD
+                //delete memo
+                process* temp=curr;
+                curr=curr->next;
+                prev=curr;
+                *process_list=curr;
+                deleteProcess(temp);
+            }
+            else if(curr->next==NULL){//TAIL
+                process* temp=curr;
+                prev->next=NULL;
+                curr=NULL;
+                deleteProcess(temp);
+
+            }
+            else{//BODY
+                process* temp=curr;
+                prev->next=curr->next;
+                curr=curr->next;
+                deleteProcess(temp);
+            }     
+        }
+        else{
+            prev=curr;
+            curr=curr->next;
+        }   
     }
-        
 }
 
 void printProcessList(process** process_list){
@@ -89,27 +126,7 @@ void printProcessList(process** process_list){
         printf("%d    %s           %s\n",temp->pid,temp->cmd->arguments[0],(temp->status==SUSPENDED)?"SUSPENDED":(temp->status==RUNNING)?"RUNNING":"TERMINATED");
         temp=temp->next;
     }
-}
-
-
-void deleteProcess(process** process_list){
-    process* curr=*process_list;
-    process* prev=curr;
-
-    while(curr!=NULL){
-        if(curr->status==TERMINATED){
-            prev->next=curr->next;
-            //delete curr
-            curr=prev->next;
-            
-        }
-        else{
-            prev=curr;
-            curr=curr->next;
-        }
-      
-    }
-
+    deleteProcesses(process_list);
 }
 
 int main(int argc, char **argv) {
@@ -140,6 +157,7 @@ int main(int argc, char **argv) {
             fprintf(stderr,"\nPID: %d\nExecuting command: %s\n",cpid,buf);
         }
         if(!strcmp(buf,"quit\n")){//quit
+            freeProcessList(process_list);
             exit(1);
         }
        
@@ -147,15 +165,19 @@ int main(int argc, char **argv) {
         if(input){
             if(strcmp(input->arguments[0],"cd")==0){//Change directory 
                 if(chdir(input->arguments[1])==-1){
+                    freeCmdLines(input);
                     perror("Error");
                     _exit(1);
                 }
+                freeCmdLines(input);
             }
             else if(strcmp(input->arguments[0],"procs")==0){//print all processes
                 printProcessList(&process_list);
+                freeCmdLines(input);
             }
             else if(strcmp(input->arguments[0],"kill")==0 && input->argCount==2){//kill procces
                 kill(atoi(input->arguments[1]),SIGINT);
+                freeCmdLines(input);
             }
             else if((input->argCount==3) && (strcmp(input->arguments[0],"suspend")==0)){
                 int sleepProcess = fork();
@@ -163,6 +185,7 @@ int main(int argc, char **argv) {
                     kill(atoi(input->arguments[1]),SIGTSTP);
                     sleep(atoi(input->arguments[2]));
                     kill(atoi(input->arguments[1]),SIGCONT);
+                    freeCmdLines(input);
                     _exit(1);
                 }
             }
@@ -177,7 +200,6 @@ int main(int argc, char **argv) {
                 }
             }
         }
-
     }while(1);
 
     return 0;

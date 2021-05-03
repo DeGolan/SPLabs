@@ -35,17 +35,6 @@ void addProcess(process** process_list, cmdLine* cmd, pid_t pid){
     *process_list=newProcess; 
 }
 
-void printProcessList(process** process_list){
-    if(*process_list==NULL)
-        return;
-    printf("PID    Command    STATUS\n");
-    process* temp=*process_list;
-    while (temp!=NULL){
-      
-        printf("%d    %s           %s\n",temp->pid,temp->cmd->arguments[0],(temp->status==SUSPENDED)?"SUSPENDED":(temp->status==RUNNING)?"RUNNING":"TERMINATED");
-        temp=temp->next;
-    }
-}
 
 void freeProcessList(process* process_list){
     process* curr = process_list;
@@ -71,35 +60,73 @@ void updateProcessList(process **process_list){
     while(curr!=NULL){
         int newStatus=0;
         int res = waitpid(curr->pid,&newStatus,WNOHANG | WUNTRACED | WCONTINUED); //checking proc status
-        if(res>0) // Terminate
-            updateProcessStatus(*process_list,curr->pid,TERMINATED);
-
+        if(res>0){ // Terminate
+            if(WIFEXITED(newStatus)){
+                updateProcessStatus(*process_list,curr->pid,TERMINATED);
+            }
+            else if (WIFSIGNALED(newStatus)) {
+               updateProcessStatus(*process_list,curr->pid,TERMINATED);
+            }
+            else if(WIFSTOPPED(newStatus)){
+                updateProcessStatus(*process_list,curr->pid,SUSPENDED);
+            } else if (WIFCONTINUED(newStatus)) {
+                updateProcessStatus(*process_list,curr->pid,RUNNING);
+            }
+        }
         curr = curr->next;
-    }
-        
+    }      
 }
-
-
-
-void deleteProcess(process** process_list){
+void deleteProcess(process* process){
+        free(process->cmd);
+        free(process);
+}
+void deleteProcesses(process** process_list){
     process* curr=*process_list;
     process* prev=curr;
-
     while(curr!=NULL){
-        if(curr->status==TERMINATED){
-            prev->next=curr->next;
-            //delete curr
-            curr=prev->next;
-            
+        if(curr->status==TERMINATED){  
+            if(curr==prev){//HEAD
+                //delete memo
+                process* temp=curr;
+                curr=curr->next;
+                prev=curr;
+                *process_list=curr;
+                deleteProcess(temp);
+            }
+            else if(curr->next==NULL){//TAIL
+                deleteProcess(curr);
+                prev->next=NULL;
+                curr=NULL;
+
+            }
+            else{//BODY
+                process* temp=curr;
+                prev->next=curr->next;
+                curr=curr->next;
+                deleteProcess(temp);
+            }     
         }
         else{
             prev=curr;
             curr=curr->next;
-        }
-      
+        }   
     }
-
 }
+void printProcessList(process** process_list){
+    if(*process_list==NULL)
+        return;
+    printf("PID    Command    STATUS\n");
+    updateProcessList(process_list);
+    process* temp=*process_list;
+    while (temp!=NULL){
+        printf("%d    %s           %s\n",temp->pid,temp->cmd->arguments[0],(temp->status==SUSPENDED)?"SUSPENDED":(temp->status==RUNNING)?"RUNNING":"TERMINATED");
+        temp=temp->next;
+    }
+    deleteProcesses(process_list);
+}
+
+
+
 
 int main(int argc, char **argv) {
     int debug=0;
@@ -129,6 +156,7 @@ int main(int argc, char **argv) {
             fprintf(stderr,"\nPID: %d\nExecuting command: %s\n",cpid,buf);
         }
         if(!strcmp(buf,"quit\n")){//quit
+            freeProcessList(process_list);
             exit(1);
         }
        
@@ -144,8 +172,7 @@ int main(int argc, char **argv) {
                 printProcessList(&process_list);
             }
             else if(!(cpid=fork())){//Code child 
-                execute(input);
-              
+                execute(input);        
             }
            else{//Code of parent
                 addProcess(&process_list,input,cpid);
@@ -155,7 +182,7 @@ int main(int argc, char **argv) {
                 }
             }
         }
-      
+
     }while(1);
 
     return 0;
