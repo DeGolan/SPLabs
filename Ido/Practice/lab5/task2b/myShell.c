@@ -79,32 +79,45 @@ void updateProcessList(process **process_list)
 
 void removeTerminatedProcesses(process **process_list)
 {
-
     if (*process_list != NULL)
-    {    
+    {
         process *prev = *process_list;
         process *curr = prev->next;
-        if (prev->status == -1)
+        if (prev->status == -1 && curr == NULL)
         {
-            process_list = &curr;
             free(prev->cmd);
-            prev->next = NULL;
         }
-        while (curr != NULL)
+        while (prev->status == -1 && curr != NULL)
         {
-            if (curr->status == -1)
-            {
-                prev->next = curr->next;
-                free(curr->cmd);
-                curr->next = NULL;
-                curr = prev->next;
-            }
-            else
-            {
-                prev = curr;
-                curr = curr->next;
-            }
+            printf("%d, %d\n", prev->pid, prev->status);
+            prev->next = NULL;
+            //  free(prev->cmd);
+            *prev = *curr;
+            curr=prev->next;
         }
+        
+        process_list = &curr;
+        // if (prev->status == -1)
+        // {
+        //     process_list = &curr;
+        //     free(prev->cmd);
+        //     prev->next = NULL;
+        // }
+        // while (curr != NULL)
+        // {
+        //     if (curr->status == -1)
+        //     {
+        //         prev->next = curr->next;
+        //         free(curr->cmd);
+        //         curr->next = NULL;
+        //         curr = prev->next;
+        //     }
+        //     else
+        //     {
+        //         prev = curr;
+        //         curr = curr->next;
+        //     }
+        // }
     }
 }
 void printProcessList(process **process_list)
@@ -208,5 +221,6 @@ int main(int argc, char **argv)
 
         //free(line);
     } while (1);
+    freeProcessList(process_List);
     return 0;
 }
