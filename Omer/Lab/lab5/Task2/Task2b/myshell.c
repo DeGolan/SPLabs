@@ -35,13 +35,13 @@ void addProcess(process** process_list, cmdLine* cmd, pid_t pid){
     *process_list=newProcess; 
 }
 
-
 void freeProcessList(process* process_list){
     process* curr = process_list;
     while(curr!=NULL){
         process* tmp = curr->next;
-        free(curr->cmd);
+        freeCmdLines(curr->cmd);
         curr->next = NULL;
+        free(curr);
         curr = tmp;
     }
 }
@@ -49,14 +49,14 @@ void freeProcessList(process* process_list){
 void updateProcessStatus(process* process_list, int pid, int status){
     
     process* curr = process_list;
-    while(curr->pid!=pid) curr= curr->next;
-
+    while(curr->pid!=pid){
+         curr= curr->next;
+    }
     curr->status = status;
 }
 
 void updateProcessList(process **process_list){
-
-    process* curr = *(process_list);
+    process* curr = *process_list;
     while(curr!=NULL){
         int newStatus=0;
         int res = waitpid(curr->pid,&newStatus,WNOHANG | WUNTRACED | WCONTINUED); //checking proc status
@@ -76,10 +76,12 @@ void updateProcessList(process **process_list){
         curr = curr->next;
     }      
 }
+
 void deleteProcess(process* process){
-        free(process->cmd);
+        freeCmdLines(process->cmd);
         free(process);
 }
+
 void deleteProcesses(process** process_list){
     process* curr=*process_list;
     process* prev=curr;
@@ -94,9 +96,10 @@ void deleteProcesses(process** process_list){
                 deleteProcess(temp);
             }
             else if(curr->next==NULL){//TAIL
-                deleteProcess(curr);
+                process* temp=curr;
                 prev->next=NULL;
                 curr=NULL;
+                deleteProcess(temp);
 
             }
             else{//BODY
@@ -112,6 +115,7 @@ void deleteProcesses(process** process_list){
         }   
     }
 }
+
 void printProcessList(process** process_list){
     if(*process_list==NULL)
         return;
@@ -124,9 +128,6 @@ void printProcessList(process** process_list){
     }
     deleteProcesses(process_list);
 }
-
-
-
 
 int main(int argc, char **argv) {
     int debug=0;
@@ -156,21 +157,23 @@ int main(int argc, char **argv) {
             fprintf(stderr,"\nPID: %d\nExecuting command: %s\n",cpid,buf);
         }
        
-       
         cmdLine* input=parseCmdLines(buf); //Parse the input using parseCmdLines() 
         if(input){
-             if(!strcmp(input->arguments[0],"quit")){//quit
-            freeProcessList(process_list);
-            exit(1);
+            if(!strcmp(input->arguments[0],"quit")){//quit
+                freeCmdLines(input);
+                exit(1);
             }
             else if(strcmp(input->arguments[0],"cd")==0){//Change directory 
                 if(chdir(input->arguments[1])==-1){
+                    freeCmdLines(input);
                     perror("Error");
                     _exit(1);
                 }
+                freeCmdLines(input);
             }
             else if(strcmp(input->arguments[0],"procs")==0){//print all processes
                 printProcessList(&process_list);
+                freeCmdLines(input);
             }
             else if(!(cpid=fork())){//Code child 
                 execute(input);        
@@ -183,7 +186,6 @@ int main(int argc, char **argv) {
                 }
             }
         }
-
     }while(1);
 
     return 0;
