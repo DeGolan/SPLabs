@@ -9,34 +9,6 @@ typedef struct Stack
     int *array;
 } Stack;
 
-typedef struct Node
-{
-    char data;
-    Node *next;
-}Node;
-
-void addNode(Node* list,char data){
-    Node* new=malloc(sizeof(Node));
-    new.next=list;
-    new.data=data;
-    list=new;
-}
-int listSize(Node* list){
-    int size=0;
-    Node* temp=list;
-    while(temp!=NULL){
-        size++;
-        temp=temp->next;
-    } 
-}
-void printList(Node* list){
-    Node* temp=list;
-    while(temp!=NULL){
-        printf("%x",temp->data & 0xff);
-        temp=temp->next;
-    } 
-}
-
 // function to create a stack of given capacity. It initializes size of
 // stack as 0
 struct Stack *createStack(unsigned capacity)
@@ -85,35 +57,87 @@ int peek(struct Stack *stack)
     return stack->array[stack->top];
 }
 
-int convertOctToBinary(char octC, int position)
-{
-    int oct = octC - '0';
-    oct = oct << position * 3;
+char* octAdd(char* num1,char* num2){
+    int size1,size2,maxSize;
+    //get the size of each number
+    for(size1=0; num1[size1]!=0;size1++);
+    //printf("Size of first number: %d\n",size1);
+    
+    for(size2=0; num2[size2]!=0;size2++);
+    //printf("Size of second number: %d\n",size2);
+    
+    maxSize=(size1>size2)?size1:size2;
 
-    int add = (0b1);
-    int bin = 0b000;
-    for (int i = 0; oct > 0; i++)
-    {
-        if (oct % 2 == 1)
-        {
-            bin = bin + add;
+    size1-=1;//index to the msb
+    size2-=1;//index to the msb
+    //printf("Max Size: %d\n",maxSize+1);
+
+    char* result=(char*)malloc(maxSize+2);
+    result[maxSize+2]=0;//NULL TERMINATED STRING
+
+    //result[0]=0;//to know if we used the extra bit in case of carry
+    int digit1,digit2,resultDigit,carry=0;
+    while(maxSize>=0){
+        if(size1>=0){//in case the other number has more digits
+            digit1=num1[size1]-'0';//convert from char to oct digit
         }
-        oct = oct / 2;
-        add = add << 1;
-    }
-    return bin;
-}
+        else{
+            digit1=0;
+        }
+       // printf("digit1: %d\n",digit1);
+        if(size2>=0){
+             digit2=num2[size2]-'0';//convert from char to oct digit
+        }
+        else{//in case the other number has more digits
+            digit2=0;
+        }
+        //printf("digit2: %d\n",digit2);
+        
+        resultDigit=digit1+digit2+carry;//the main add
+        //printf("result digit before carry: %d\n",resultDigit);
+        if(resultDigit>7){//in case of carry
+            resultDigit-=8;
+            carry=1;
+        }
+        else{
+            carry=0;
+        }
+         //("result digit after carry: %d\ncarry: %d\n",resultDigit,carry);
+        
 
-void bin(unsigned n)
-{
-    unsigned i;
-    for (i = 1 << 31; i > 0; i = i / 2)
-        (n & i) ? printf("1") : printf("0");
+        result[maxSize]=resultDigit+'0';//convert from oct to char and put int the result string
+
+        maxSize--;
+        size1--;
+        size2--;
+    }
+
+    if(result[0]=='0'){
+        //The lsb has not been used
+        //printf("The lsb has not been used\n");
+        result=result+1;
+    }
+
+    return result;
+    
 }
 
 int main(int argc, char **argv)
 {
+    do{
+        char num1[80];
+        char num2[80];
+        printf("Calc: ");
+        gets(num1);
+        printf("Cals: ");
+        gets(num2);
+        printf("ADD Result: %s\n",octAdd(num1,num2));
 
+    }while(1);
+    
+
+
+    /*
     Stack *stack = createStack(63);
     stack->capacity = 5;
     char buf[80];
@@ -123,8 +147,10 @@ int main(int argc, char **argv)
         number += convertOctToBinary(buf[i], i);
     }
     bin(number);
+    */
+
     
-    Node* list=NULL;
+   
 
     
 

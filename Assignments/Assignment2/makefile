@@ -1,14 +1,12 @@
-all: exec
+all: calc
 
-libs: asm-lib 
+calc: calc.o 
+	gcc -m32 -g -Wall -o calc calc.o 
+	rm -rf ./*.o
 
-asm-lib: calculator.s
+calc.o: calc.c
+	gcc -g -Wall -m32 -c -o calc.o calc.c
 
-	nasm -f elf calculator.s -o calculator.o
-
-exec: libs
-	gcc -m32 -Wall -g calculator.o -o calc
-	rm calculator.o
 
 .PHONY: clean
 clean:
