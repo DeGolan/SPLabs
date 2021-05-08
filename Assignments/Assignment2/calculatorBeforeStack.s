@@ -6,14 +6,6 @@
     add esp,8
     popad
 %endmacro
-%macro printNumber 1
-    pushad
-    push %1
-    push format_number
-    call printf
-    add esp,8
-    popad
-%endmacro
 %macro getString 1
         push dword [stdin] 
         push 80 
@@ -30,13 +22,6 @@
     sub byte BL,'0'
     mov [%3],BL 
 %endmacro
-%macro getOctalValue 2
-    mov BL,byte[%1]
-    cmp byte BL,'0'
-    jl %2
-    cmp byte BL,'7'
-    jg %2
-%endmacro
 section	.rodata			; we define (global) read-only variables in .rodata section
 	format_result: db "%s",10,0	; format string
     format_calc: db "%s",0	; format string
@@ -47,7 +32,6 @@ section	.rodata			; we define (global) read-only variables in .rodata section
 
 
 section .bss
-
     input1: resb 80 ;entered number from user
     input2: resb 80 ;entered number from user
     operator: resb 2 ;entered operator from user
@@ -65,12 +49,7 @@ section .bss
     new_result_ptr: resb 4;will hold the shorther str result
     new_ptr_size:resb 4;will hold the new pointer size
     stack_size:resb 4;will hold the current number of items in the stack
-    current:resb 80;will hold a pointer to the next operand
-    stack:resb 4;will hold a pointer to the stack
-    top:resb 4;will hold a pointer to the top of the stack
-
-
-
+    current:resb 4;will hold a pointer to the next operand
    
 section .text
     align 16
@@ -92,8 +71,6 @@ main:
     init:   
         mov dword[capacity],5
         mov dword[stack_size],0
-        mov dword[top],-1
-
         mov ebp, esp
         mov eax,[ebp+4]
         cmp eax,2
@@ -125,54 +102,6 @@ main:
         sub dword[capacity],5
 
     initStack:
-
-        mov eax,[capacity]
-        shl eax,2 ;4 bytes per pointer
-        pushad
-        push eax
-        call malloc
-        add esp,4
-        mov [stack],eax
-        popad
-getUserInput:
-        call printCalc
-        getString current
-        getOctalValue current,opCheck
-        inc dword[top]
-        mov eax,[top]
-        printNumber eax
-        printString current
-
-        mov ecx,[stack]
-        mov dword[ecx+eax],current
-        jmp getUserInput
-
-    opCheck:
-        ;mov ecx,dword[top]
-        ;printNumber ecx
-        mov eax,[current]
-        mov [operator],eax
-        ;cmp byte [operator],'+'
-        ;je sizeCheck1
-        ;cmp byte [operator],'&'
-        ;je sizeCheck1
-
-        mov eax,[top]
-        mov ebx,[stack+eax]
-        mov [input1],ebx
-        ;printNumber eax
-
-        sub eax,1
-        mov ebx,[stack+eax]
-        mov [input2],ebx
-        ;printNumber eax
-
-
-        sub eax,1
-        mov [top],eax
-        
-        
-
     ;print capacity
         ;mov ebx,[capacity]
         ;push ebx
@@ -183,21 +112,19 @@ getUserInput:
 
         ;cmp eax, 0
 
-    ;getFirstNum:   
-    ;    call printCalc
-    ;    getString input1
-;
-    ;getSecondNum: 
-    ;    call printCalc
-    ;    getString input2
-;
-    ;getOperator:
-    ;    call printCalc
-    ;    getString operator
-    ;    ;^^^^^ WILL CHANGE ^^^^^
-    ;    mov eax,0
+    getFirstNum:   
+        call printCalc
+        getString input1
 
+    getSecondNum: 
+        call printCalc
+        getString input2
 
+    getOperator:
+        call printCalc
+        getString operator
+        ;^^^^^ WILL CHANGE ^^^^^
+        mov eax,0
 
     sizeCheck1:;check the digid number of number1 
         cmp byte [input1+eax],0
@@ -268,7 +195,7 @@ getUserInput:
         cmp dword[size2],0
         jge digit2ToOct 
         mov dword[digit2],0
-        jmp addOrAnd
+        jmp opCheck
     
     digit2ToOct:
         mov eax,[size2]
@@ -276,14 +203,10 @@ getUserInput:
         sub byte BL,'0'
         mov [digit2],BL
     
-    addOrAnd:
+    opCheck:
         cmp byte [operator],'+'
-        je addOP
-        cmp byte [operator],'&'
-        je andOP
+        jne andOP
         ;resultDigit=digit1+digit2+carry;  
-    addOP:
-        
         mov eax, [digit1]
         mov ebx,[digit2]
         add eax,ebx
@@ -361,30 +284,32 @@ getUserInput:
         mov byte[eax+1],0
         popad
         ;free old result
-        call freePointer
+        pushad
+        mov eax,[result_ptr]
+        push eax
+        call free
+        add esp,4
+        popad
         mov eax,[new_result_ptr]
         mov [result_ptr],eax  
         jmp result
 
 makeShorter:
         pushad
-        inc dword[new_ptr_size]
         mov eax, [new_ptr_size]
-        add eax,1
+        ;add eax,1
         push eax
-        push 1
-        call calloc
-        add esp,8
+        call malloc
+        add esp,4
         mov [new_result_ptr],eax
         popad
 
         mov esi,0
         mov ebx,[leading_zeroes]
         mov ecx,[new_result_ptr]
-        mov edi,dword [new_ptr_size]
        
     shorther:
-        cmp  esi,edi
+        cmp  esi,dword[new_ptr_size]
         jge freeOld
         mov edx,[result_ptr]
         add edx,esi
@@ -395,7 +320,12 @@ makeShorter:
 
     freeOld:
         ;free old result
-        call freePointer
+        pushad
+        mov eax,[result_ptr]
+        push eax
+        call free
+        add esp,4
+        popad
         mov eax,[new_result_ptr]
         mov [result_ptr],eax
 
@@ -404,7 +334,12 @@ result:
         mov eax,[result_ptr]
         printString eax
         ;free result
-         call freePointer
+         pushad
+        mov eax,[result_ptr]
+        push eax
+        call free
+        add esp,4
+        popad
         
     end:
         ret
@@ -415,14 +350,5 @@ printCalc:
         push format_calc
         call printf ;print calc:
         add esp, 8
-        popad
-        ret
-
-freePointer:
-        pushad
-        mov eax,[result_ptr]
-        push eax
-        call free
-        add esp,4
         popad
         ret
