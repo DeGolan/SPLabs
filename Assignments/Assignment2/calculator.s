@@ -14,6 +14,14 @@
     add esp,8
     popad
 %endmacro
+%macro printChar 1
+    pushad
+    push %1
+    push format_char
+    call printf
+    add esp,8
+    popad
+%endmacro
 %macro getString 1
         push dword [stdin] 
         push 80 
@@ -38,10 +46,10 @@
     jg %2
 %endmacro
 section	.rodata			; we define (global) read-only variables in .rodata section
-	format_result: db "%s",10,0	; format string
+	format_result: db "%s",0	; format string
     format_calc: db "%s",0	; format string
     format_number: db "%d",10,0	; format number
-    format_char: db "%c",0	; format number
+    format_char: db "%c",10,0	; format number
     calc: db "calc: " , 0
     bad_args: db "not enough args" , 0
 
@@ -92,7 +100,7 @@ main:
     init:   
         mov dword[capacity],5
         mov dword[stack_size],0
-        mov dword[top],-1
+        mov dword[top],-4
 
         mov ebp, esp
         mov eax,[ebp+4]
@@ -138,29 +146,34 @@ getUserInput:
         call printCalc
         getString current
         getOctalValue current,opCheck
-        inc dword[top]
+        
+        add dword[top],4
         mov eax,[top]
-        printNumber eax
-        printString current
+        ;printNumber eax
+        ;printString current
 
         mov ecx,[stack]
         mov dword[ecx+eax],current
+        ;mov ebx,[ecx,eax]
+        ;printString ebx
         jmp getUserInput
 
     opCheck:
         ;mov ecx,dword[top]
         ;printNumber ecx
-        mov eax,[current]
-        mov [operator],eax
+        ;mov edx,current
+        mov dword[operator],current
+        ;mov edx, [operator]
+        ;printString edx
         ;cmp byte [operator],'+'
         ;je sizeCheck1
         ;cmp byte [operator],'&'
         ;je sizeCheck1
-
         mov eax,[top]
-        mov ebx,[stack+eax]
+        mov ecx,[stack]
+        mov ebx,[ecx+eax]
         mov [input1],ebx
-        ;printNumber eax
+        printString ebx
 
         sub eax,1
         mov ebx,[stack+eax]
