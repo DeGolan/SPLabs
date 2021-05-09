@@ -1,3 +1,11 @@
+%macro freePointer 1
+    pushad
+    mov eax,[%1]
+    push eax
+    call free
+    add esp,4
+    popad
+%endmacro
 %macro printString 1
     pushad
     push %1
@@ -54,7 +62,7 @@
 %endmacro
 
 section	.rodata			; we define (global) read-only variables in .rodata section
-	format_result: db "%s",0	; format string
+	format_result: db "%s",10,0	; format string
     format_calc: db "%s",0	; format string
     format_number: db "%d",10,0	; format number
     format_char: db "%c",10,0	; format number
@@ -322,11 +330,13 @@ main:
         cmp eax,ebx ;put in max_size the longer number digit size
         ja sizeOneIsBigger
         mov [max_size],ebx
+        mov [result_size],ebx
         jmp cont3
 
     sizeOneIsBigger:
         mov [max_size],eax
         mov [result_size],eax
+       
 
     cont3:
         sub dword [size1],2
@@ -345,7 +355,11 @@ main:
         mov ebx,[result_ptr]
         mov byte[ebx+eax],0;put Null at the end of the string
         mov dword[carry],0;reset carry
-        mov eax,[max_size]
+
+        ; mov eax,[max_size]
+        ; mov eax,[result_size]
+        ;  printNumber eax
+        ; printNumber ebx
      
      operation:
          cmp dword[max_size],-1;while(maxSize>=0)
@@ -463,7 +477,7 @@ main:
         mov byte[eax+1],0
         popad
         ;free old result
-        call freePointer
+        freePointer result_ptr
         mov eax,[new_result_ptr]
         mov [result_ptr],eax  
         jmp result
@@ -497,7 +511,7 @@ makeShorter:
 
     freeOld:
         ;free old result
-        call freePointer
+        freePointer result_ptr
         mov eax,[new_result_ptr]
         mov [result_ptr],eax
 
@@ -506,7 +520,15 @@ result:
         mov eax,[result_ptr]
         printString eax
         ;free result
-         call freePointer
+        freePointer result_ptr
+        ;free input1
+        freePointer input1
+        ;free input2
+        freePointer input2
+         ;free operator
+        freePointer operator
+          ;free stack
+        freePointer stack
         
     end:
         ret
@@ -540,11 +562,11 @@ printCalc:
     popad
     ret
 
-freePointer:
-    pushad
-    mov eax,[result_ptr]
-    push eax
-    call free
-    add esp,4
-    popad
-    ret
+; freePointer:
+;     pushad
+;     mov eax,[result_ptr]
+;     push eax
+;     call free
+;     add esp,4
+;     popad
+;     ret
