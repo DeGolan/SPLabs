@@ -113,6 +113,8 @@ section .bss
     stack:resb 4;will hold a pointer to the stack
     top:resb 4;will hold a pointer to the top of the stack
     need_to_free:resb 4;flag to know if to free result_ptr
+    temp_pointer:resb 4 ;use to print and free right after
+    dup_pointer:resb 4;use to duplicate
 
    
 section .text
@@ -133,13 +135,7 @@ section .text
 
 main:
     init:   
-        ; pushad
-        ; mov eax,80
-        ; push eax
-        ; call malloc
-        ; add esp,4
-        ; mov [result_helper],eax
-        ; popad
+        
         mov dword[need_to_free],0
         mov dword[capacity],5
         mov dword[stack_size],0
@@ -203,61 +199,36 @@ main:
         mov eax,[current]
         cmp byte[eax],'q'
         je popAndFree
+        cmp byte[eax],'p'
+        je popAndPrint
+        cmp byte[eax],'d'
+        je duplicate
         mov dword[operator],eax
         popFromStack input2
         popFromStack input1
-        ; mov eax,[input2]
-        ; mov ebx,[input1]
-        ; printString eax
-        ; printString ebx
-       
-
-        ; ;push num1
-        ; call printCalc
-        ; getString current
-        ; pushToStack current
-       
-        ; ;push num1
-        ; call printCalc
-        ; getString current
-        ; pushToStack current
-       
-        ; ;operator
-        ; call printCalc
-        ; getString current
-        ; mov eax,[current]
-        ; mov dword[operator],eax
-
-        ; ;pop num2
-        ; popFromStack input2
-        ; ;pop num2
-        ; popFromStack input1
-        ; mov dword[size1],0
-        ; mov dword[size2],0
-        ; mov dword[digit1],0
-        ; mov dword[digit2],0
-        ; mov dword[max_size],0
-        ; mov dword[result_size],0
-        ; mov dword[carry],0
-        ; mov dword[resulDigit],0
+     
 
         mov eax,0
         mov ebx,[input1]
     sizeCheck1:;check the digit number of number1 
         cmp byte [ebx+eax],0
         je cont1
+        cmp byte [ebx+eax],10
+        je cont1
         inc eax
         jmp sizeCheck1
 
     cont1:
         mov [size1],eax
-        printNumber eax
+        
         mov eax,0
 
         ;check the digid number of number2
     sizeCheck2:
         mov ebx,[input2]
         cmp byte [ebx+eax],0
+        je cont2
+        cmp byte [ebx+eax],10
         je cont2
         inc eax
         jmp sizeCheck2
@@ -278,9 +249,9 @@ main:
        
 
     cont3:
-        sub dword [size1],2
-        sub dword [size2],2
-        sub dword [max_size],1
+        sub dword [size1],1
+        sub dword [size2],1
+        ;sub dword [max_size],1
 
         cmp  dword [need_to_free],0
         je noNeedToFree
@@ -299,7 +270,7 @@ main:
         mov eax,[max_size]
         add eax,1
         mov ebx,[result_ptr]
-        mov byte[ebx+eax],10;put Null at the end of the string
+        mov byte[ebx+eax],0;put Null at the end of the string
         mov dword[carry],0;reset carry
 
      
@@ -486,23 +457,9 @@ result:
     ;     mov byte[ebx+esi],0
 
         pushToStack result_ptr
-        mov eax,[result_ptr]
+       ; mov eax,[result_ptr]
 
-        pushad
-        mov eax,0
-        mov ebx,[result_ptr]
-    sizeCheck3:;check the digit number of number1 
-        cmp byte [ebx+eax],0
-        je cont4
-        inc eax
-        jmp sizeCheck3
-
-    cont4:
-        mov [size1],eax
-        printNumber eax
-        popad
-
-        printString eax
+        ;printString eax
         
         ;free input1
         freePointer input1
@@ -566,11 +523,53 @@ printCalc:
     popad
     ret
 
-; freePointer:
-;     pushad
-;     mov eax,[result_ptr]
-;     push eax
-;     call free
-;     add esp,4
-;     popad
-;     ret
+popAndPrint:
+    pushad
+    popFromStack temp_pointer
+    mov eax,[temp_pointer]
+    printString eax
+    freePointer temp_pointer
+    popad
+    jmp receivingInput
+
+duplicate:
+    pushad
+    popFromStack temp_pointer
+
+    mov esi,0
+    mov eax,[temp_pointer]
+countSizeDup: 
+    cmp byte[eax+esi],0
+    je preWork
+    inc esi
+    jmp countSizeDup
+
+
+preWork:
+    pushad
+    push esi
+    call malloc
+    add esp,4
+    mov [dup_pointer],eax
+    popad
+
+    mov eax,[temp_pointer]
+    mov ebx,[dup_pointer]
+    mov esi,0
+    dupWork:
+        cmp byte[eax+esi],0
+        je doneDup
+        mov byte CL,[eax+esi]
+        mov byte [ebx+esi],CL
+        inc esi
+        jmp dupWork
+    doneDup:
+        mov byte [ebx+esi],0
+        pushToStack temp_pointer
+        pushToStack dup_pointer    
+        popad
+        jmp receivingInput
+
+bytesNumber:
+
+
