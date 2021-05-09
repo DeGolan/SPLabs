@@ -56,9 +56,9 @@ section	.rodata			; we define (global) read-only variables in .rodata section
 
 section .bss
 
-    input1: resb 80 ;entered number from user
-    input2: resb 80 ;entered number from user
-    operator: resb 2 ;entered operator from user
+    input1: resb 4 ;pointer to entered number from user
+    input2: resb 4 ;pointer to entered number from user
+    operator: resb 4 ;pointer to operator from user
     size1: resb 4 ;digits number the first number
     size2: resb 4 ;digits number the second number
     max_size:resb 4;will be the size of the result string
@@ -66,6 +66,7 @@ section .bss
     result_size:resb 4;will hold the result str size
     digit1: resb 4;will hold the current digit of the first number
     digit2: resb 4;will hold the current digit of the second number
+    temp1: resb 4
     resulDigit:resb 4;will hold the current digit of the result
     carry: resb 4;will hold the current carry
     capacity: resb 4; will hold max capacity of stack
@@ -74,8 +75,10 @@ section .bss
     new_ptr_size:resb 4;will hold the new pointer size
     stack_size:resb 4;will hold the current number of items in the stack
     current:resb 80;will hold a pointer to the next operand
+    current_ptr:resb 4
     stack:resb 4;will hold a pointer to the stack
     top:resb 4;will hold a pointer to the top of the stack
+    
 
 
 
@@ -100,7 +103,7 @@ main:
     init:   
         mov dword[capacity],5
         mov dword[stack_size],0
-        mov dword[top],-4
+        mov dword[top],-1
 
         mov ebp, esp
         mov eax,[ebp+4]
@@ -113,11 +116,11 @@ main:
         mov ecx,[ebp+8]
         mov ecx, [ecx+4]
 
-        getOctalValue ecx,initStack,digit1
+        getOctalValue ecx,initStack,temp1
 
         getOctalValue ecx+1,singleDigitCapacity,digit2
 
-        mov CL,byte[digit1]
+        mov CL,byte[temp1]
         shl CL,3
         add [capacity],CL
 
@@ -128,63 +131,81 @@ main:
         jmp initStack
 
     singleDigitCapacity:
-        mov CL,byte[digit1]
+        mov CL,byte[temp1]
         add [capacity],CL
         sub dword[capacity],5
 
     initStack:
-
+        pushad
         mov eax,[capacity]
         shl eax,2 ;4 bytes per pointer
-        pushad
         push eax
         call malloc
         add esp,4
         mov [stack],eax
         popad
-getUserInput:
-        call printCalc
-        getString current
-        getOctalValue current,opCheck
         
-        add dword[top],4
-        mov eax,[top]
-        ;printNumber eax
-        ;printString current
-
-        mov ecx,[stack]
-        mov dword[ecx+eax],current
-        ;mov ebx,[ecx,eax]
-        ;printString ebx
-        jmp getUserInput
-
-    opCheck:
-        ;mov ecx,dword[top]
-        ;printNumber ecx
-        ;mov edx,current
-        mov dword[operator],current
-        ;mov edx, [operator]
-        ;printString edx
-        ;cmp byte [operator],'+'
-        ;je sizeCheck1
-        ;cmp byte [operator],'&'
-        ;je sizeCheck1
-        mov eax,[top]
-        mov ecx,[stack]
-        mov ebx,[ecx+eax]
-        mov [input1],ebx
-        printString ebx
-
-        sub eax,1
-        mov ebx,[stack+eax]
-        mov [input2],ebx
-        ;printNumber eax
-
-
-        sub eax,1
-        mov [top],eax
+; getUserInput:
+;         call printCalc
+;         getString current
+;         mov dword[current_ptr],current
+;         mov eax,[current_ptr]
+;         getOctalValue eax,opCheck
+       
         
+;         add dword[top],1
+;         mov eax,[top]
+;         ;printNumber eax
+;         ;printString current
+
+;         mov ecx,[stack]
+;         mov edx,[current_ptr]
+;         printString edx
+;         mov [ecx+eax*4-4],edx
+;         mov [input1],edx
         
+;         jmp getUserInput
+
+;     opCheck:
+;         ;mov ecx,dword[top]
+;         ;printNumber ecx
+;         mov ecx,[current_ptr]
+;         mov [operator],ecx
+        
+       
+;         ;mov edx, [operator]
+;         ;printString edxf
+;         ;cmp byte [operator],'+'
+;         ;je sizeCheck1
+;         ;cmp byte [operator],'&'
+;         ;je sizeCheck1
+;         mov eax,[top]
+        
+;         mov ecx,[stack]
+;         mov ebx,[ecx+eax*4]
+;         ;mov [input2],ebx
+;         ;printString ebx
+
+;         sub dword[top],1
+;         mov eax,[top]
+;         mov ecx,[stack]
+;         mov ebx,[ecx+eax*4]
+;         ;mov [input1],ebx
+;         ;printNumber eax
+
+;         mov eax,[input1]
+;         printString eax
+
+        
+;         sub dword[top],1
+       
+
+        ; ;debug
+        ; mov ebx,[input1]
+        ; printString ebx
+        ; mov eax,[input2]
+        ; printString eax
+        ; ;debug
 
     ;print capacity
         ;mov ebx,[capacity]
@@ -208,12 +229,14 @@ getUserInput:
     ;    call printCalc
     ;    getString operator
     ;    ;^^^^^ WILL CHANGE ^^^^^
-    ;    mov eax,0
+        
 
 
-
+        mov eax,0
+        mov ebx,[input1]
     sizeCheck1:;check the digid number of number1 
-        cmp byte [input1+eax],0
+        
+        cmp byte [ebx+eax],0
         je cont1
         inc eax
         jmp sizeCheck1
@@ -222,9 +245,10 @@ getUserInput:
         mov [size1],eax
         mov eax,0
 
-        ;check the digid number of number2
+        ;check the digit number of number2
     sizeCheck2:
-        cmp byte [input2+eax],0
+        mov ecx,[input2]
+        cmp byte [ecx+eax],0
         je cont2
         inc eax
         jmp sizeCheck2
@@ -272,7 +296,8 @@ getUserInput:
     
     digit1ToOct:     
         mov eax,[size1]
-        mov BL,[input1+eax]
+        mov ecx,[input1]
+        mov BL,[ecx+eax]
         sub byte BL,'0'
         mov [digit1],BL       
         ;digit2 case
@@ -285,14 +310,17 @@ getUserInput:
     
     digit2ToOct:
         mov eax,[size2]
-        mov BL,[input2+eax]
+        mov ecx,[input2]
+        mov BL,[ecx+eax]
         sub byte BL,'0'
         mov [digit2],BL
     
     addOrAnd:
-        cmp byte [operator],'+'
+        mov ebx,[operator]
+        mov byte AL,[ebx]
+        cmp byte AL,'+'
         je addOP
-        cmp byte [operator],'&'
+        cmp byte AL,'&'
         je andOP
         ;resultDigit=digit1+digit2+carry;  
     addOP:
