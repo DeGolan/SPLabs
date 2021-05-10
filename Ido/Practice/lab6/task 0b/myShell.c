@@ -27,7 +27,7 @@ void execute(cmdLine *pCmdLine)
     }
     if (pCmdLine->outputRedirect != NULL)
     {
-        fd1 = open(pCmdLine->outputRedirect, O_CREAT|O_WRONLY);
+        fd1 = open(pCmdLine->outputRedirect, O_CREAT|O_WRONLY,0777);
         dup2(fd1, STDOUT_FILENO);
         close(fd1);
     }
