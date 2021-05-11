@@ -86,6 +86,8 @@ section	.rodata			; we define (global) read-only variables in .rodata section
     format_char: db "%c",10,0	; format number
     calc: db "calc: " , 0
     bad_args: db "not enough args" , 0
+    err_overflow:db "Error: Operand Stack Overflow",0
+    err_insufficient: db "Error: Insufficient Number of Arguments on Stack" ,0
 
 
 section .bss
@@ -115,8 +117,8 @@ section .bss
     need_to_free:resb 4;flag to know if to free result_ptr
     temp_pointer:resb 4 ;use to print and free right after
     dup_pointer:resb 4;use to duplicate
-
-   
+    opertion_number:resb 4;use for count the opertion number
+    bytes_number:resb 4;use for count the number of bytes
 section .text
     align 16
     extern printf
@@ -174,7 +176,7 @@ main:
     initStack:
 
         mov eax,[capacity]
-        shl eax,2 ;4 bytes per pointer CHECKED-V
+        shl eax,2 ;4 bytes per pointer 
         pushad
         push eax
         call malloc
@@ -182,16 +184,29 @@ main:
         mov [stack],eax
         popad
         mov dword[top],-1
-      
+        ;change cap size to fit top*4
+        mov eax,[capacity]
+        shl eax,2
+        sub eax,4
+        mov [capacity],eax
+        mov dword[opertion_number],0;init
     receivingInput:
         call printCalc
         getString current
+        inc dword[opertion_number]
         mov eax,[current]
         cmp byte [eax],'0'
         jl isOperator
         cmp byte [eax],'7'
         jg isOperator
         ;curr is a number
+        mov eax,[capacity]
+        ;check overflow
+        cmp dword eax,[top]
+        jne notFull
+        printString err_overflow
+        jmp receivingInput
+    notFull:
         pushToStack current
         jmp receivingInput
 
@@ -199,10 +214,23 @@ main:
         mov eax,[current]
         cmp byte[eax],'q'
         je popAndFree
+        cmp dword [top],-1
+        jne notEmpty
+        printString err_insufficient
+        jmp receivingInput
+    notEmpty:
         cmp byte[eax],'p'
         je popAndPrint
         cmp byte[eax],'d'
         je duplicate
+        cmp byte[eax],'n'
+        je bytesNumber
+        ;check if there are 2 elem at least at the stack
+        cmp dword[top],4
+        jge enoughOperands
+        printString err_insufficient
+        jmp receivingInput
+    enoughOperands:
         mov dword[operator],eax
         popFromStack input2
         popFromStack input1
@@ -474,6 +502,7 @@ result:
         
     
     popAndFree:      
+        
         cmp dword[top],-1
         je end
         popFromStack input1
@@ -482,13 +511,16 @@ result:
         
         
     end:
+        mov eax,[opertion_number]
+        sub eax,1
+        printNumber eax
         freePointer result_ptr
-        ;free operator
-        freePointer current
-       ;free operator
+       
         freePointer operator
-        ;free stack
+
+        freePointer current
         freePointer stack
+       
         ret
 
 incTop:
@@ -544,7 +576,6 @@ countSizeDup:
     inc esi
     jmp countSizeDup
 
-
 preWork:
     pushad
     push esi
@@ -571,5 +602,82 @@ preWork:
         jmp receivingInput
 
 bytesNumber:
+    pushad
+    popFromStack temp_pointer
+    mov eax,[temp_pointer]
+    mov ebx,0;number of digits
+digitCount:
+    cmp byte[eax+ebx],10
+    je bytesCalc
+    inc ebx
+    jmp digitCount
+
+bytesCalc:
+ freePointer temp_pointer
+    ;*3
+ 
+    mov ecx,ebx
+    shl BL,1
+    add ebx,ecx
+ 
+    ;/4
+    shr BL,3
+    cmp ebx,0
+    jne roundUp
+    add ebx,1
+    jmp withoutCarry
+  
+roundUp:
+    mov ecx,7
+    and ecx,ebx
+    cmp ecx,0
+    je withoutCarry
+    add ebx,1
+
+withoutCarry:
+    mov esi,0
+    mov eax,ebx
+    mov edx,0
+    mov ebx,10
+divideByTen:
+
+    div ebx
+    push edx
+    inc esi
+    mov edx,0
+    cmp eax,0
+    jg divideByTen
+
+    mov eax,esi
+    add eax,2
+ 
+    pushad
+    push eax
+    call malloc
+    add esp,4
+    mov [dup_pointer],eax
+    popad
+    mov eax,[dup_pointer]
+    mov byte[eax+esi+1],0
+    mov byte[eax+esi],10
+    cmp esi,0
+    mov ebx,0
+    sub esi,1
+  
+buildStr:
+    cmp esi,0
+    jl endOfByteCount
+    pop ebx
+    add ebx,'0'
+    mov byte[eax+esi],BL
+    sub esi,1
+    jmp buildStr
+
+endOfByteCount:
+    mov eax,[dup_pointer]
+    pushToStack dup_pointer
+    popad
+    jmp receivingInput
+
 
 
