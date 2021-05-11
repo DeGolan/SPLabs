@@ -102,33 +102,6 @@ int main(int argc, char **argv)
         cmdLine *input = parseCmdLines(buf); //Parse the input using parseCmdLines()
         if (input)
         {
-
-            if (!strcmp(buf, "quit\n"))
-            { //quit
-                for (size_t i = 0; i < historyIndex; i++)
-                {
-                    if (history[i] != NULL)//can not delete what is already deleted
-                    {
-                        freeCmdLines(history[i]);
-                        history[i] = NULL;//need help avi help us please
-                    }
-                }
-                freeCmdLines(input);
-                _exit(1);
-            }
-            if (input->arguments[0][0] == '!')
-            { //run from history
-                int historicCommandIndex = input->arguments[0][1] - '0';
-                if (historicCommandIndex < historyIndex)
-                {
-                    input = history[historicCommandIndex];
-                }
-                else
-                {
-                    fprintf(stderr, "invalid history index \n log has :%d\n you asked for:%d\n", historyIndex, historicCommandIndex);
-                    _exit(1);
-                }
-            }
             if (input->next != NULL)
             { //PIPE
                 piped = 1;
@@ -138,23 +111,30 @@ int main(int argc, char **argv)
                     exit(EXIT_FAILURE);
                 }
             }
-            if (strcmp(input->arguments[0], "cd") == 0)
+
+            if (!strcmp(buf, "quit\n"))
+            { //quit
+                for (size_t i = 0; i < historyIndex; i++)
+                {
+                    freeCmdLines(history[i]);
+                }
+                freeCmdLines(input);
+                _exit(1);
+            }
+            else if (strcmp(input->arguments[0], "cd") == 0)
             { //Change directory
                 if (chdir(input->arguments[1]) == -1)
                 {
                     perror("Error");
                     _exit(1);
                 }
-                insertToHistory(history, input);//add here because no fork
             }
-
             else if (strcmp(input->arguments[0], "history") == 0)
             { //print history
                 for (size_t i = 0; i < historyIndex; i++)
                 {
                     fprintf(stdout, "%s\n", history[i]->arguments[0]);
                 }
-                insertToHistory(history, input);//add here because no fork
             }
 
             else if (!(cpid = fork()))
