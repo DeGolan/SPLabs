@@ -107,10 +107,18 @@ int main(int argc, char **argv)
             { //quit
                 for (size_t i = 0; i < historyIndex; i++)
                 {
-                    if (history[i] != NULL)//can not delete what is already deleted
+                    for (size_t j = i; j < historyIndex; j++)
+                    {
+                        if (&history[i] == &history[j])
+                        {
+                            history[j] = NULL;
+                        }
+                    }
+
+                    if (history[i] != NULL) //can not delete what is already deleted
                     {
                         freeCmdLines(history[i]);
-                        history[i] = NULL;//need help avi help us please
+                        history[i] = NULL; //need help avi help us please
                     }
                 }
                 freeCmdLines(input);
@@ -145,7 +153,7 @@ int main(int argc, char **argv)
                     perror("Error");
                     _exit(1);
                 }
-                insertToHistory(history, input);//add here because no fork
+                insertToHistory(history, input); //add here because no fork
             }
 
             else if (strcmp(input->arguments[0], "history") == 0)
@@ -154,7 +162,7 @@ int main(int argc, char **argv)
                 {
                     fprintf(stdout, "%s\n", history[i]->arguments[0]);
                 }
-                insertToHistory(history, input);//add here because no fork
+                insertToHistory(history, input); //add here because no fork
             }
 
             else if (!(cpid = fork()))
