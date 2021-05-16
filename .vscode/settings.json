@@ -4,6 +4,12 @@
         "sstream": "c",
         "util.h": "c",
         "dirent.h": "c",
-        "algorithm": "c"
+        "algorithm": "c",
+        "stdlib.h": "c",
+        "string.h": "c",
+        "array": "c",
+        "string_view": "c",
+        "initializer_list": "c",
+        "utility": "c"
     }
 }
