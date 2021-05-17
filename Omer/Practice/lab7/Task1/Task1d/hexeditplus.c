@@ -30,14 +30,23 @@ struct fun_desc
 };
 
 /* Writes buffer to file without converting it to text with write */
-void write_units(FILE* output, unsigned char* buffer,int unit_size, int count) {
-    fwrite(buffer, unit_size, count, output);
+void write_units(FILE *output, unsigned char *buffer, int unit_size, int count)
+{
+  fwrite(buffer, unit_size, count, output);
 }
 
-char *unit_to_format(int unit_size)
+char *unit_to_format(int unit_size, int hex)
 {
-  static char *formats[] = {"%#hhx\n", "%#hx\n", "No such unit", "%#x\n"};
-  return formats[unit_size - 1];
+  if (hex)
+  {
+    static char *formats[] = {"%#hhx\n", "%#hx\n", "No such unit", "%#x\n"};
+    return formats[unit_size - 1];
+  }
+  else
+  {
+    static char *formats[] = {"%#hhd\n", "%#hd\n", "No such unit", "%#d\n"};
+    return formats[unit_size - 1];
+  }
 }
 /* Prints the buffer to screen by converting it to text with printf */
 void print_units(FILE *output, unsigned char *buffer, int count, int unit_size, int hex)
@@ -47,15 +56,7 @@ void print_units(FILE *output, unsigned char *buffer, int count, int unit_size, 
   {
     //print ints
     int var = *((int *)(buffer));
-    if (hex)
-    {
-      fprintf(output, unit_to_format(unit_size), var);
-    }
-    else
-    {
-      fprintf(output, "%d\n", var);
-    }
-
+    fprintf(output, unit_to_format(unit_size,hex), var);
     buffer += unit_size;
   }
 }
@@ -141,8 +142,8 @@ void loadIntoMemory(state *s)
     fprintf(stderr, "Error: file_name is empy");
     return;
   }
-  int fd = open(s->file_name, O_RDONLY);
-  if (fd == -1)
+  FILE* file = fopen(s->file_name,"r");
+  if (file == NULL)
   {
     perror("Error");
     return;
@@ -156,16 +157,16 @@ void loadIntoMemory(state *s)
     fprintf(stderr, "location: %s, length: %d\n", location, length);
   }
   int location_as_number = hexToDec(location);
-  lseek(fd, location_as_number, SEEK_SET);     //going to the location in the file
-  read(fd, s->mem_buf, s->unit_size * length); //reading length*unit
+  fseek(file, location_as_number, SEEK_SET);     //going to the location in the file
+  fread(s->mem_buf, s->unit_size , length,file); //reading length*unit
   printf("Load %d units into memory\n", length);
-  close(fd);
+  fclose(file);
 }
 
 void memoryDisplay(state *s)
 {
   printf("Enter <address> and <length>\n");
-  char address[100];
+  char address[256];
   int length;
   scanf("%s %d", address, &length);
   if (s->debug_mode)
@@ -181,8 +182,9 @@ void memoryDisplay(state *s)
   }
   else
   {
-    adr = (unsigned char *)address;
-    printf("read from file in adr");
+    adr = (unsigned char *)hexToDec(address);
+
+    printf("%p", adr);
   }
   printf("Hexdecimal\n==========\n");
   print_units(stdout, adr, length, s->unit_size, 1);
@@ -191,81 +193,59 @@ void memoryDisplay(state *s)
   printf("\n");
 }
 
-void saveIntoFile(state *s){
-   printf("Enter <source-address> <target-location> <length>\n");
+void saveIntoFile(state *s)
+{
+  printf("Enter <source-address> <target-location> <length>\n");
   char source_address[100];
   char target_location[100];
   int length;
-  scanf("%s %s %d", source_address,target_location, &length);
+  scanf("%s %s %d", source_address, target_location, &length);
   if (s->debug_mode)
   {
-    fprintf(stderr,"source-address: %s\n,target-location: %s length: %d\n", source_address,target_location, length);
+    fprintf(stderr, "source-address: %s\n,target-location: %s length: %d\n", source_address, target_location, length);
   }
-  int target_location_as_number=hexToDec(target_location);
-<<<<<<< HEAD
-  printf("OFFSET: %d\n",target_location_as_number);
-  FILE* file = fopen(s->file_name, "r+");
-=======
-  FILE* file = fopen(s->file_name, "w+");
->>>>>>> e0c22cee3498b282cb7fe585626643bf121526de
+  int target_location_as_number = hexToDec(target_location);
+  printf("OFFSET: %d\n", target_location_as_number);
+  FILE *file = fopen(s->file_name, "r+");
   if (file == NULL)
   {
     perror("Error");
     return;
   }
-  fseek(file, target_location_as_number, SEEK_SET);     
+  fseek(file, target_location_as_number, SEEK_SET);
   unsigned char *adr;
   if (!strcmp(source_address, "0"))
   {
     adr = s->mem_buf;
-<<<<<<< HEAD
-=======
-    printf("special case - 0\n");
->>>>>>> e0c22cee3498b282cb7fe585626643bf121526de
   }
   else
   {
-    adr = (unsigned char *)source_address;
-<<<<<<< HEAD
-=======
-    printf("read from file in adr\n");
->>>>>>> e0c22cee3498b282cb7fe585626643bf121526de
+    adr = (unsigned char *)hexToDec(source_address);
   }
-  write_units(file,adr,s->unit_size,length); 
+  write_units(file, adr, s->unit_size, length);
   fclose(file);
-
 }
 
-<<<<<<< HEAD
-void memoryModify(state *s){
-   printf("Enter <location> <val>\n");
+void memoryModify(state *s)
+{
+  printf("Enter <location> <val>\n");
   char val[s->unit_size];
   char location[100];
-  scanf("%s %s", location,val);
+  scanf("%s %s", location, val);
   if (s->debug_mode)
   {
-    fprintf(stderr,"location: %s\n,val: %s\n", location,val);
+    fprintf(stderr, "location: %s\n,val: %s\n", location, val);
   }
-  int offset=hexToDec(location);
-  for(int i=offset;i<s->unit_size+offset;i++){
-    s->mem_buf[i]=val[i];
-  }
+  int offset = hexToDec(location);
+  int val_dec = hexToDec(val);
+  memcpy(s->mem_buf + offset, &val_dec, s->unit_size);
 }
 
-=======
->>>>>>> e0c22cee3498b282cb7fe585626643bf121526de
 void dummy(state *s)
 {
 }
 
-<<<<<<< HEAD
-struct fun_desc menu[] = {{"Toggle Debug Mode", toggleDebugMode}, {"Set File Name", setFileName},
- {"Set Unit Size", setUnitSize}, {"Load Into Memory", loadIntoMemory},
-  {"Memory Display", memoryDisplay}, {"Save Into File", saveIntoFile},
-   {"Memory Modify", memoryModify}, {"Quit", quit}, {NULL, NULL}};
-=======
-struct fun_desc menu[] = {{"Toggle Debug Mode", toggleDebugMode}, {"Set File Name", setFileName}, {"Set Unit Size", setUnitSize}, {"Load Into Memory", loadIntoMemory}, {"Memory Display", memoryDisplay}, {"Save Into File", saveIntoFile}, {"Memory Modify", dummy}, {"Quit", quit}, {NULL, NULL}};
->>>>>>> e0c22cee3498b282cb7fe585626643bf121526de
+struct fun_desc menu[] = {{"Toggle Debug Mode", toggleDebugMode}, {"Set File Name", setFileName}, {"Set Unit Size", setUnitSize}, {"Load Into Memory", loadIntoMemory}, {"Memory Display", memoryDisplay}, {"Save Into File", saveIntoFile}, {"Memory Modify", memoryModify}, {"Quit", quit}, {NULL, NULL}};
 
 int main(int argc, char **argv)
 {
