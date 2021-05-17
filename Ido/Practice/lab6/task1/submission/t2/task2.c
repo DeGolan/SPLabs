@@ -14,10 +14,6 @@
 #define RUNNING 1
 #define SUSPENDED 0
 #define BUF_SIZE 2048
-#define MAX_HISTORY 10
-#define PIPE_SIZE 2
-
-int historyIndex = 0;
 
 void execute(cmdLine *pCmdLine)
 {
@@ -44,39 +40,11 @@ void execute(cmdLine *pCmdLine)
     }
 }
 
-void insertToHistory(cmdLine **history, cmdLine *line)
-{
-    if (historyIndex <= 9)
-    {
-        history[historyIndex] = line;
-        historyIndex++;
-    }
-    else
-    {
-        int existsLater = 0;
-        for (size_t j = 1; j < historyIndex; j++)
-        {
-            if (history[0] == history[j])
-            {
-                existsLater = 1;
-            }
-        }
-        if (!existsLater)
-            freeCmdLines(history[0]);
-        for (size_t i = 0; i < 9; i++)
-        {
-            history[i] = history[i + 1];
-        }
-        history[9] = line;
-    }
-}
-
 int main(int argc, char **argv)
 {
     int debug = 0;
     int piped = 0;
-    int pipefd[PIPE_SIZE];
-    cmdLine *history[MAX_HISTORY];
+    int pipefd[2];
 
     for (int i = 1; i < argc; i++)
     {
@@ -111,46 +79,6 @@ int main(int argc, char **argv)
         cmdLine *input = parseCmdLines(buf); //Parse the input using parseCmdLines()
         if (input)
         {
-
-            if (!strcmp(buf, "quit\n"))
-            { //quit
-                int existsLater = 0;
-                for (size_t i = 0; i < historyIndex; i++)
-                {
-                    for (size_t j = i + 1; j < historyIndex; j++)
-                    {
-                        if (history[i] == history[j])
-                        {
-                            //  printf("will be later -> history[%d]=%s\n", i, history[i]->arguments[0]);
-                            //  printf("is later -> history[%d]=%s\n", j, history[j]->arguments[0]);
-                            existsLater = 1;
-                        }
-                    }
-                    if (!existsLater)
-                    {
-                        // printf("delete now :%d %s\n", i, history[i]->arguments[0]);
-                        freeCmdLines(history[i]);
-                        history[i] = NULL;
-                    }
-                    existsLater = 0;
-                }
-                freeCmdLines(input);
-                _exit(1);
-            }
-            if (input->arguments[0][0] == '!')
-            { //run from history
-                int historicCommandIndex = input->arguments[0][1] - '0';
-                if (historicCommandIndex < historyIndex)
-                {
-                    freeCmdLines(input);
-                    input = history[historicCommandIndex];
-                }
-                else
-                {
-                    fprintf(stderr, "invalid history index \n log has :%d\n you asked for:%d\n", historyIndex, historicCommandIndex);
-                    _exit(1);
-                }
-            }
             if (input->next != NULL)
             { //PIPE
                 piped = 1;
@@ -160,27 +88,18 @@ int main(int argc, char **argv)
                     exit(EXIT_FAILURE);
                 }
             }
-            if (strcmp(input->arguments[0], "cd") == 0)
+
+            if (!strcmp(buf, "quit\n"))
+            { //quit
+                _exit(1);
+            }
+            else if (strcmp(input->arguments[0], "cd") == 0)
             { //Change directory
                 if (chdir(input->arguments[1]) == -1)
                 {
                     perror("Error");
                     _exit(1);
                 }
-                insertToHistory(history, input); //add here because no fork
-            }
-
-            else if (strcmp(input->arguments[0], "history") == 0)
-            { //print history
-                for (size_t i = 0; i < historyIndex; i++)
-                {
-                    for (size_t j = 0; j < history[i]->argCount; j++)
-                    {
-                        fprintf(stdout, "%s ", history[i]->arguments[j]);
-                    }
-                    fprintf(stdout, "\n");
-                }
-                insertToHistory(history, input); //add here because no fork
             }
 
             else if (!(cpid = fork()))
@@ -221,18 +140,17 @@ int main(int argc, char **argv)
                         close(pipefd[0]); /*close read end*/
                         //can actually not close read end, does not impact code except leaving file open for no reason
                     }
-                    piped = 0;
-                    waitpid(child2, NULL, 0);
+                    piped=0;
+                    waitpid(child2,NULL,0);
                 }
 
                 if (input->blocking)
                 {
                     waitpid(cpid, NULL, 0);
                 }
-                insertToHistory(history, input);
             }
         }
-        // freeCmdLines(input);
+        freeCmdLines(input);
     } while (1);
 
     return 0;
