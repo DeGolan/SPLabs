@@ -29,6 +29,11 @@ struct fun_desc
   void (*fun)(state *);
 };
 
+/* Writes buffer to file without converting it to text with write */
+void write_units(FILE* output, unsigned char* buffer,int unit_size, int count) {
+    fwrite(buffer, unit_size, count, output);
+}
+
 char *unit_to_format(int unit_size)
 {
   static char *formats[] = {"%#hhx\n", "%#hx\n", "No such unit", "%#x\n"};
@@ -197,34 +202,51 @@ void saveIntoFile(state *s){
     fprintf(stderr,"source-address: %s\n,target-location: %s length: %d\n", source_address,target_location, length);
   }
   int target_location_as_number=hexToDec(target_location);
-  int fd = open(s->file_name, O_WRONLY);
-  if (fd == -1)
+  printf("OFFSET: %d\n",target_location_as_number);
+  FILE* file = fopen(s->file_name, "r+");
+  if (file == NULL)
   {
     perror("Error");
     return;
   }
-  lseek(fd, target_location_as_number, SEEK_SET);     //going to the location in the file
+  fseek(file, target_location_as_number, SEEK_SET);     
   unsigned char *adr;
-  if (target_location_as_number==0)
+  if (!strcmp(source_address, "0"))
   {
     adr = s->mem_buf;
-    printf("special case - 0\n");
   }
   else
   {
-    adr = (unsigned char *)target_location;
-    printf("read from file in adr\n");
+    adr = (unsigned char *)source_address;
   }
-  write(fd, adr, s->unit_size * length); //reading length*unit
-  close(fd);
+  write_units(file,adr,s->unit_size,length); 
+  fclose(file);
 
+}
+
+void memoryModify(state *s){
+   printf("Enter <location> <val>\n");
+  char val[s->unit_size];
+  char location[100];
+  scanf("%s %s", location,val);
+  if (s->debug_mode)
+  {
+    fprintf(stderr,"location: %s\n,val: %s\n", location,val);
+  }
+  int offset=hexToDec(location);
+  for(int i=offset;i<s->unit_size+offset;i++){
+    s->mem_buf[i]=val[i];
+  }
 }
 
 void dummy(state *s)
 {
 }
 
-struct fun_desc menu[] = {{"Toggle Debug Mode", toggleDebugMode}, {"Set File Name", setFileName}, {"Set Unit Size", setUnitSize}, {"Load Into Memory", loadIntoMemory}, {"Memory Display", memoryDisplay}, {"Save Into File", saveIntoFile}, {"Memory Modify", dummy}, {"Quit", quit}, {NULL, NULL}};
+struct fun_desc menu[] = {{"Toggle Debug Mode", toggleDebugMode}, {"Set File Name", setFileName},
+ {"Set Unit Size", setUnitSize}, {"Load Into Memory", loadIntoMemory},
+  {"Memory Display", memoryDisplay}, {"Save Into File", saveIntoFile},
+   {"Memory Modify", memoryModify}, {"Quit", quit}, {NULL, NULL}};
 
 int main(int argc, char **argv)
 {
