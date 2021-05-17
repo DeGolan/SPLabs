@@ -202,8 +202,12 @@ void saveIntoFile(state *s){
     fprintf(stderr,"source-address: %s\n,target-location: %s length: %d\n", source_address,target_location, length);
   }
   int target_location_as_number=hexToDec(target_location);
+<<<<<<< HEAD
   printf("OFFSET: %d\n",target_location_as_number);
   FILE* file = fopen(s->file_name, "r+");
+=======
+  FILE* file = fopen(s->file_name, "w+");
+>>>>>>> e0c22cee3498b282cb7fe585626643bf121526de
   if (file == NULL)
   {
     perror("Error");
@@ -214,16 +218,25 @@ void saveIntoFile(state *s){
   if (!strcmp(source_address, "0"))
   {
     adr = s->mem_buf;
+<<<<<<< HEAD
+=======
+    printf("special case - 0\n");
+>>>>>>> e0c22cee3498b282cb7fe585626643bf121526de
   }
   else
   {
     adr = (unsigned char *)source_address;
+<<<<<<< HEAD
+=======
+    printf("read from file in adr\n");
+>>>>>>> e0c22cee3498b282cb7fe585626643bf121526de
   }
   write_units(file,adr,s->unit_size,length); 
   fclose(file);
 
 }
 
+<<<<<<< HEAD
 void memoryModify(state *s){
    printf("Enter <location> <val>\n");
   char val[s->unit_size];
@@ -239,14 +252,20 @@ void memoryModify(state *s){
   }
 }
 
+=======
+>>>>>>> e0c22cee3498b282cb7fe585626643bf121526de
 void dummy(state *s)
 {
 }
 
+<<<<<<< HEAD
 struct fun_desc menu[] = {{"Toggle Debug Mode", toggleDebugMode}, {"Set File Name", setFileName},
  {"Set Unit Size", setUnitSize}, {"Load Into Memory", loadIntoMemory},
   {"Memory Display", memoryDisplay}, {"Save Into File", saveIntoFile},
    {"Memory Modify", memoryModify}, {"Quit", quit}, {NULL, NULL}};
+=======
+struct fun_desc menu[] = {{"Toggle Debug Mode", toggleDebugMode}, {"Set File Name", setFileName}, {"Set Unit Size", setUnitSize}, {"Load Into Memory", loadIntoMemory}, {"Memory Display", memoryDisplay}, {"Save Into File", saveIntoFile}, {"Memory Modify", dummy}, {"Quit", quit}, {NULL, NULL}};
+>>>>>>> e0c22cee3498b282cb7fe585626643bf121526de
 
 int main(int argc, char **argv)
 {
