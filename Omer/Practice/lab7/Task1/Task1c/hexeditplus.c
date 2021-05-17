@@ -29,6 +29,11 @@ struct fun_desc
   void (*fun)(state *);
 };
 
+/* Writes buffer to file without converting it to text with write */
+void write_units(FILE* output, unsigned char* buffer,int unit_size, int count) {
+    fwrite(buffer, unit_size, count, output);
+}
+
 char *unit_to_format(int unit_size)
 {
   static char *formats[] = {"%#hhx\n", "%#hx\n", "No such unit", "%#x\n"};
@@ -197,26 +202,26 @@ void saveIntoFile(state *s){
     fprintf(stderr,"source-address: %s\n,target-location: %s length: %d\n", source_address,target_location, length);
   }
   int target_location_as_number=hexToDec(target_location);
-  int fd = open(s->file_name, O_WRONLY);
-  if (fd == -1)
+  FILE* file = fopen(s->file_name, "w+");
+  if (file == NULL)
   {
     perror("Error");
     return;
   }
-  lseek(fd, target_location_as_number, SEEK_SET);     //going to the location in the file
+  fseek(file, target_location_as_number, SEEK_SET);     
   unsigned char *adr;
-  if (target_location_as_number==0)
+  if (!strcmp(source_address, "0"))
   {
     adr = s->mem_buf;
     printf("special case - 0\n");
   }
   else
   {
-    adr = (unsigned char *)target_location;
+    adr = (unsigned char *)source_address;
     printf("read from file in adr\n");
   }
-  write(fd, adr, s->unit_size * length); //reading length*unit
-  close(fd);
+  write_units(file,adr,s->unit_size,length); 
+  fclose(file);
 
 }
 
