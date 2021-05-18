@@ -1,0 +1,6 @@
+main=0x804846,.text=0x8043b0,.text offset=3b0
+main -.text+.text offset=0x464
+size 175 B
+
+
+
