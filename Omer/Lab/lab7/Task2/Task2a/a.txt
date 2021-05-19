@@ -1,0 +1,8 @@
+8: 08048156     0 NOTYPE  GLOBAL DEFAULT    2 _start
+
+Entry point address:               0x804816c
+
+
+
+
+

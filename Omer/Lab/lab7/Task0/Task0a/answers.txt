@@ -1,0 +1,7 @@
+1.Entry point address:               0x80482e0
+2.  Number of section headers:         34
+3. .text      size 0001b8
+4. 080482e0     0 FUNC    GLOBAL DEFAULT   12 _start
+5. 60: 08048388    51 FUNC    GLOBAL DEFAULT   12 main
+6. main-.text=
+080482e0-08048388=10090668+.textoffset=10090668+0002e0=10090948
