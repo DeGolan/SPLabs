@@ -1,4 +1,3 @@
-
 %macro pushToStack 1
     pushad
     call incTop
@@ -289,12 +288,24 @@ digitCount:
     jmp digitCount
 
 bytesCalc:
- freePointer temp_pointer
- freePointer current
+
     ;*3
     mov ecx,ebx
     shl BL,1
     add ebx,ecx
+    ;now we have the num of bits in ebx, we will remove the leading zeros
+    mov eax,[temp_pointer]
+    cmp byte[eax],'1'
+    je removeTwo
+    cmp byte[eax],'3'
+    jg finReduce
+    sub ebx,1
+    jmp finReduce
+removeTwo:
+    sub ebx,2
+finReduce:
+    freePointer temp_pointer
+    freePointer current
     ;/4
     shr BL,3
     cmp ebx,0
@@ -311,17 +322,17 @@ roundUp:
 
 withoutCarry:
     mov esi,0
-    mov eax,ebx
+    mov eax,ebx;we have in eax the bytes number as integer in dec basis
     mov edx,0
-    mov ebx,10
+    mov ebx,8
 
-divideByTen:
+divideByEight:
     div ebx
     push edx
     inc esi
     mov edx,0
     cmp eax,0
-    jg divideByTen
+    jg divideByEight
     mov eax,esi
     add eax,2
     pushad
@@ -335,15 +346,16 @@ divideByTen:
     mov byte[eax+esi],10
     cmp esi,0
     mov ebx,0
-    sub esi,1
-  
+    ;sub esi,1
+    mov edi,esi
+    mov esi,0
 buildStr:
-    cmp esi,0
-    jl endOfByteCount
+    cmp esi,edi
+    je endOfByteCount
     pop ebx
     add ebx,'0'
     mov byte[eax+esi],BL
-    sub esi,1
+    inc esi
     jmp buildStr
 
 endOfByteCount:
