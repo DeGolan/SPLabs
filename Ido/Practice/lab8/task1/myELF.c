@@ -156,6 +156,10 @@ void printSections(elf *e)
     Elf32_Shdr *sh_strtab = &e->shdr[e->ehdr->e_shstrndx];
     const char *const sh_strtab_p = e->addr + sh_strtab->sh_offset;
     printf("INDEX NAME   ADDRESS   OFFSET   SIZE   TYPE\n");
+    if (e->debug_mode)
+    {
+        fprintf(stderr, "DEBUG: shstrndx:%x\tsection name offsets:%x\n", e->ehdr->e_shstrndx, e->ehdr->e_shoff);
+    }
     for (int i = 0; i < e->ehdr->e_shnum; ++i)
     {
         printf("[%d] '%s' %4d %d %d %s\n", i, sh_strtab_p + e->shdr[i].sh_name, e->shdr[i].sh_addr, e->shdr[i].sh_offset, e->shdr[i].sh_size, getSectionType(e->shdr[i].sh_type));

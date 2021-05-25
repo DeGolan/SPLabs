@@ -156,6 +156,10 @@ void printSections(elf *e)
     Elf32_Shdr *sh_strtab = &e->shdr[e->ehdr->e_shstrndx];
     const char *const sh_strtab_p = e->addr + sh_strtab->sh_offset;
     printf("INDEX NAME   ADDRESS   OFFSET   SIZE   TYPE\n");
+    if (e->debug_mode)
+    {
+        fprintf(stderr, "DEBUG: shstrndx:%x\tsection name offsets:%x\n", e->ehdr->e_shstrndx, e->ehdr->e_shoff);
+    }
     for (int i = 0; i < e->ehdr->e_shnum; ++i)
     {
         printf("[%d] '%s' %4d %d %d %s\n", i, sh_strtab_p + e->shdr[i].sh_name, e->shdr[i].sh_addr, e->shdr[i].sh_offset, e->shdr[i].sh_size, getSectionType(e->shdr[i].sh_type));
@@ -177,6 +181,10 @@ void printSymbols(elf *e)
             printf("Found SymTable\n");
             symtab = (Elf32_Sym *)(e->addr + e->shdr[i].sh_offset);
             num_of_symbols = e->shdr[i].sh_size / sizeof(Elf32_Sym);
+            if (e->debug_mode)
+            {
+                fprintf(stderr, "DEBUG: size:%x\tnum of symbols:%x\t\n", e->shdr[i].sh_size ,num_of_symbols);
+            }
         }
         if (strcmp(sh_strtab_p + e->shdr[i].sh_name, ".strtab") == 0)
         {
@@ -189,10 +197,10 @@ void printSymbols(elf *e)
         char *index = symtab[i].st_shndx == SHN_UNDEF ? "UND" : symtab[i].st_shndx == SHN_ABS  ? "ABS"
                                                             : symtab[i].st_shndx == SHN_COMMON ? "COM"
                                                                                                : "";
-        Elf32_Shdr *temp =(Elf32_Shdr *)( e->addr+e->ehdr->e_shoff);
+        Elf32_Shdr *temp = (Elf32_Shdr *)(e->addr + e->ehdr->e_shoff);
         if (strcmp(index, "") == 0)
         {
-            printf("[%d]\t%x\t%d\t\t%s\t\t%s\n", i, symtab[i].st_value, symtab[i].st_shndx, sh_strtab_p+temp[symtab[i].st_shndx].sh_name, strtab + symtab[i].st_name);
+            printf("[%d]\t%x\t%d\t\t%s\t\t%s\n", i, symtab[i].st_value, symtab[i].st_shndx, sh_strtab_p + temp[symtab[i].st_shndx].sh_name, strtab + symtab[i].st_name);
         }
         else
         {
