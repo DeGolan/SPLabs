@@ -84,7 +84,7 @@ char *getSectionType(int type)
 void quit(elf *e)
 {
     printf("Quitting...\n");
-    free(e->ehdr);
+    // free(e->ehdr);
     free(e);
     exit(1);
 }
@@ -161,33 +161,43 @@ void printSections(elf *e)
         printf("[%d] '%s' %4d %d %d %s\n", i, sh_strtab_p + e->shdr[i].sh_name, e->shdr[i].sh_addr, e->shdr[i].sh_offset, e->shdr[i].sh_size, getSectionType(e->shdr[i].sh_type));
     }
 }
-
 void printSymbols(elf *e)
 {
-    Elf32_Shdr *symtab;
-    Elf32_Shdr *shstrtab;
+    Elf32_Sym *symtab;
+    char *strtab;
     Elf32_Shdr *sh_strtab = &e->shdr[e->ehdr->e_shstrndx];
+    int num_of_symbols = 0;
 
-    const char *const sh_strtab_p = e->addr + sh_strtab->sh_offset;
+    char *sh_strtab_p = e->addr + sh_strtab->sh_offset;
     for (int i = 0; i < e->ehdr->e_shnum; ++i)
     {
-        printf("[%d]\n", i);
+        //  printf("[%d]\n", i);
         if (strcmp(sh_strtab_p + e->shdr[i].sh_name, ".symtab") == 0)
         {
-            printf("Found SymTable");
-            symtab = (Elf32_Shdr *)&e->shdr[i];
+            printf("Found SymTable\n");
+            symtab = (Elf32_Sym *)(e->addr + e->shdr[i].sh_offset);
+            num_of_symbols = e->shdr[i].sh_size / sizeof(Elf32_Sym);
         }
-        if (strcmp(sh_strtab_p + e->shdr[i].sh_name, ".shstrtab") == 0)
+        if (strcmp(sh_strtab_p + e->shdr[i].sh_name, ".strtab") == 0)
         {
-            shstrtab = (Elf32_Shdr *)&e->shdr[i];
-            printf("Found section header shit table");
+            strtab = (char *)(e->addr + e->shdr[i].sh_offset);
         }
     }
-
-    char *str = (char *)shstrtab;
-    for (size_t i = 0; i < (symtab->sh_size / sizeof(Elf64_Sym *)); i++)
+    printf("INDEX\tVALUE\tSECTION INDEX\tSECTION NAME\tSYMBOL NAME\n");
+    for (size_t i = 0; i < num_of_symbols; i++)
     {
-        printf("%s\n", &str[shstrtab[i].sh_name]);
+        char *index = symtab[i].st_shndx == SHN_UNDEF ? "UND" : symtab[i].st_shndx == SHN_ABS  ? "ABS"
+                                                            : symtab[i].st_shndx == SHN_COMMON ? "COM"
+                                                                                               : "";
+        Elf32_Shdr *temp =(Elf32_Shdr *)( e->addr+e->ehdr->e_shoff);
+        if (strcmp(index, "") == 0)
+        {
+            printf("[%d]\t%x\t%d\t\t%s\t\t%s\n", i, symtab[i].st_value, symtab[i].st_shndx, sh_strtab_p+temp[symtab[i].st_shndx].sh_name, strtab + symtab[i].st_name);
+        }
+        else
+        {
+            printf("[%d]\t%x\t%s\t\t%s\t\t%s\n", i, symtab[i].st_value, index, index, strtab + symtab[i].st_name);
+        }
     }
 }
 void relocationTables(elf *e)
