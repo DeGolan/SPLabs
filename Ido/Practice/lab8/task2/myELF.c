@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-// #include <libelf.h>
+#include <string.h>
 #include <elf.h>
 #define NAME_LEN 128
 
@@ -76,7 +76,7 @@ char *getSectionType(int type)
         break;
 
     default:
-        return "BAD SECTION";
+        return "UNKNOWN SECTION TYPE";
         break;
     }
 }
@@ -153,12 +153,42 @@ void examine(elf *e)
 }
 void printSections(elf *e)
 {
-    printf("not implemented\n");
+    Elf32_Shdr *sh_strtab = &e->shdr[e->ehdr->e_shstrndx];
+    const char *const sh_strtab_p = e->addr + sh_strtab->sh_offset;
+    printf("INDEX NAME   ADDRESS   OFFSET   SIZE   TYPE\n");
+    for (int i = 0; i < e->ehdr->e_shnum; ++i)
+    {
+        printf("[%d] '%s' %4d %d %d %s\n", i, sh_strtab_p + e->shdr[i].sh_name, e->shdr[i].sh_addr, e->shdr[i].sh_offset, e->shdr[i].sh_size, getSectionType(e->shdr[i].sh_type));
+    }
 }
 
 void printSymbols(elf *e)
 {
-    printf("not implemented\n");
+    Elf32_Shdr *symtab;
+    Elf32_Shdr *shstrtab;
+    Elf32_Shdr *sh_strtab = &e->shdr[e->ehdr->e_shstrndx];
+
+    const char *const sh_strtab_p = e->addr + sh_strtab->sh_offset;
+    for (int i = 0; i < e->ehdr->e_shnum; ++i)
+    {
+        printf("[%d]\n", i);
+        if (strcmp(sh_strtab_p + e->shdr[i].sh_name, ".symtab") == 0)
+        {
+            printf("Found SymTable");
+            symtab = (Elf32_Shdr *)&e->shdr[i];
+        }
+        if (strcmp(sh_strtab_p + e->shdr[i].sh_name, ".shstrtab") == 0)
+        {
+            shstrtab = (Elf32_Shdr *)&e->shdr[i];
+            printf("Found section header shit table");
+        }
+    }
+
+    char *str = (char *)shstrtab;
+    for (size_t i = 0; i < (symtab->sh_size / sizeof(Elf64_Sym *)); i++)
+    {
+        printf("%s\n", &str[shstrtab[i].sh_name]);
+    }
 }
 void relocationTables(elf *e)
 {

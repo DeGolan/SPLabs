@@ -76,7 +76,7 @@ char *getSectionType(int type)
         break;
 
     default:
-        return "BAD SECTION";
+        return "UNKNOWN SECTION TYPE";
         break;
     }
 }
@@ -153,7 +153,13 @@ void examine(elf *e)
 }
 void printSections(elf *e)
 {
-    printf("not implemented\n");
+    Elf32_Shdr *sh_strtab = &e->shdr[e->ehdr->e_shstrndx];
+    const char *const sh_strtab_p = e->addr + sh_strtab->sh_offset;
+    printf("INDEX NAME   ADDRESS   OFFSET   SIZE   TYPE\n");
+    for (int i = 0; i < e->ehdr->e_shnum; ++i)
+    {
+        printf("[%d] '%s' %4d %d %d %s\n", i, sh_strtab_p + e->shdr[i].sh_name, e->shdr[i].sh_addr, e->shdr[i].sh_offset, e->shdr[i].sh_size, getSectionType(e->shdr[i].sh_type));
+    }
 }
 
 void printSymbols(elf *e)
